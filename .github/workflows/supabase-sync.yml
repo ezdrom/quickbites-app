@@ -1,16 +1,36 @@
 name: Supabase CI/CD
 
+# Two Supabase projects, one per environment:
+#   develop -> QA   (GitHub environment "qa")
+#   main    -> PRD  (GitHub environment "production", give it required reviewers)
+#
+# Each GitHub environment holds its own SUPABASE_PROJECT_ID and
+# SUPABASE_DB_PASSWORD secrets. SUPABASE_ACCESS_TOKEN is a single repository
+# secret for the Supabase account that owns both projects.
+# Setup steps: docs/environments.md
+
 on:
   push:
-    branches:
-      - main
+    branches: [develop, main]
   pull_request:
-    branches:
-      - main
+    branches: [develop, main]
   workflow_dispatch:
+    inputs:
+      target:
+        description: Environment to push migrations to (production only runs from main)
+        type: choice
+        options: [qa, production]
+        required: true
+
+# Pull request runs can be superseded; a deploy must never be cancelled halfway
+# through a db push.
+concurrency:
+  group: supabase-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # 1. Test migrations locally in ephemeral Docker stack (runs on PRs & main)
+  # Replays every migration on an empty database, the same path a brand-new
+  # project takes. Runs on PRs into develop and main, and gates both deploys.
   test-migrations:
     runs-on: ubuntu-latest
     steps:
@@ -27,11 +47,17 @@ jobs:
           supabase start
           supabase db reset
 
-  # 2. Deploy migrations to Supabase Cloud (runs ONLY on push to main)
-  deploy:
+  deploy-qa:
     needs: test-migrations
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/develop') ||
+      (github.event_name == 'workflow_dispatch' && inputs.target == 'qa')
     runs-on: ubuntu-latest
+    environment: qa
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -41,11 +67,45 @@ jobs:
         with:
           version: latest
 
+      - name: Link QA project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+
       - name: Push Database Migrations
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase db push
+
+  deploy-production:
+    needs: test-migrations
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' ||
+       (github.event_name == 'workflow_dispatch' && inputs.target == 'production'))
+    runs-on: ubuntu-latest
+    # Required reviewers on this environment pause the run here until approved.
+    environment: production
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link production project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+
+      - name: List pending migrations
         run: |
-          supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
-          supabase db push
+          {
+            echo '### Migrations about to be applied to production'
+            echo '```'
+            supabase db push --dry-run 2>&1
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Push Database Migrations
+        run: supabase db push
