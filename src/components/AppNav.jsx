@@ -5,7 +5,10 @@ import { useCart } from '../context/CartContext.jsx'
 // Nav links per role. Append entries here (e.g. My Orders -> /orders,
 // Admin -> /admin) to extend the nav; each entry is { to, label }.
 export const NAV_LINKS = {
-  student: [{ to: '/menu', label: 'Menu' }],
+  student: [
+    { to: '/menu', label: 'Menu' },
+    { to: '/orders', label: 'My Orders' },
+  ],
   canteen: [
     { to: '/canteen-orders', label: 'Orders' },
     { to: '/canteen-menu', label: 'Manage Menu' },
@@ -14,6 +17,8 @@ export const NAV_LINKS = {
     { to: '/menu', label: 'Menu' },
     { to: '/canteen-orders', label: 'Orders' },
     { to: '/canteen-menu', label: 'Manage Menu' },
+    { to: '/orders', label: 'My Orders' },
+    { to: '/admin', label: 'Admin' },
   ],
 }
 

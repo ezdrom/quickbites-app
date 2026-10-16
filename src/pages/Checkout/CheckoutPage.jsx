@@ -112,6 +112,10 @@ export default function CheckoutPage() {
         <p className="auth-status">
           Your order has been placed for ₱{confirmedOrder.total_amount}. Status: {confirmedOrder.status}.
         </p>
+        <Link to="/orders" className="auth-inline-link">
+          Track your order
+        </Link>
+        {' · '}
         <Link to="/menu" className="auth-inline-link">
           Back to menu
         </Link>

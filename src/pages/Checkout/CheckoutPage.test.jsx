@@ -71,6 +71,8 @@ test('places an order and shows the confirmation', async () => {
   await user.click(screen.getByRole('button', { name: /place order/i }))
 
   expect(await screen.findByText(/order has been placed/i)).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Track your order' })).toHaveAttribute('href', '/orders')
+  expect(screen.getByRole('link', { name: 'Back to menu' })).toHaveAttribute('href', '/menu')
   expect(mockUseCart.clearCart).toHaveBeenCalled()
 })
 
