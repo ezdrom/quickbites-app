@@ -38,7 +38,8 @@ test('shows an error with Retry and no sample items when the fetch fails in prod
 })
 
 test('Retry re-runs the fetch and shows the real menu', async () => {
-  supabase.from
+  const menuQuery = jest
+    .fn()
     .mockReturnValueOnce(makeThenable({ data: null, error: { message: 'fetch failed' } }))
     .mockReturnValue(
       makeThenable({
@@ -48,6 +49,9 @@ test('Retry re-runs the fetch and shows the real menu', async () => {
         error: null,
       }),
     )
+  supabase.from.mockImplementation((table) =>
+    table === 'canteen_settings' ? makeThenable({ data: { is_open: true }, error: null }) : menuQuery(table),
+  )
 
   const user = userEvent.setup()
   renderPage()
@@ -56,5 +60,5 @@ test('Retry re-runs the fetch and shows the real menu', async () => {
 
   expect(await screen.findByText('Real Sinigang')).toBeInTheDocument()
   expect(screen.queryByText(/couldn't load the menu/i)).not.toBeInTheDocument()
-  expect(supabase.from).toHaveBeenCalledTimes(2)
+  expect(menuQuery).toHaveBeenCalledTimes(2)
 })

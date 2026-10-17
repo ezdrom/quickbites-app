@@ -59,3 +59,17 @@ test('shows a connection error instead of hanging when supabase is unreachable',
 
   expect(await screen.findByText(/can't reach supabase/i)).toBeInTheDocument()
 })
+
+test('shows the canteen open/close control to staff', async () => {
+  supabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'u1' } }, error: null })
+  supabase.from.mockImplementation((table) => {
+    if (table === 'profiles') return makeThenable({ data: { role: 'canteen' }, error: null })
+    if (table === 'canteen_settings') return makeThenable({ data: { is_open: true }, error: null })
+    return makeThenable({ data: [], error: null })
+  })
+
+  renderPage()
+
+  expect(await screen.findByText('Canteen is open')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Close canteen' })).toBeInTheDocument()
+})

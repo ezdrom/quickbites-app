@@ -94,3 +94,17 @@ test('shows an error instead of hanging when adding an item fails', async () => 
   expect(await screen.findByText('fetch failed')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: /add item/i })).not.toBeDisabled()
 })
+
+test('shows the canteen open/close control to staff', async () => {
+  supabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'u1' } }, error: null })
+  supabase.from.mockImplementation((table) => {
+    if (table === 'profiles') return makeThenable({ data: { role: 'canteen' }, error: null })
+    if (table === 'canteen_settings') return makeThenable({ data: { is_open: false }, error: null })
+    return makeThenable({ data: [], error: null })
+  })
+
+  renderPage()
+
+  expect(await screen.findByText('Canteen is closed')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Open canteen' })).toBeInTheDocument()
+})

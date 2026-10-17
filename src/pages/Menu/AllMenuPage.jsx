@@ -5,6 +5,8 @@ import Pagination from '../../components/Pagination.jsx'
 import { useCart } from '../../context/CartContext.jsx'
 import { supabase } from '../../lib/supabaseClient.js'
 import LoadError from '../../components/LoadError.jsx'
+import CanteenClosedNotice from '../../components/CanteenClosedNotice.jsx'
+import useCanteenStatus from '../../hooks/useCanteenStatus.js'
 import { placeholderMenuItems } from '../../data/placeholderMenuItems.js'
 import { allowPlaceholderData } from '../../lib/env.js'
 
@@ -23,6 +25,8 @@ function toCardItem(row) {
 
 export default function AllMenuPage() {
   const { totalCount } = useCart()
+  const { isOpen } = useCanteenStatus()
+  const orderingClosed = isOpen === false
   const [menuItems, setMenuItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [usingPlaceholder, setUsingPlaceholder] = useState(false)
@@ -85,6 +89,8 @@ export default function AllMenuPage() {
         )}
       </div>
 
+      {orderingClosed && <CanteenClosedNotice />}
+
       {usingPlaceholder && (
         <p className="auth-status">
           Showing sample menu items — Supabase isn't reachable, so this is placeholder data.
@@ -99,7 +105,7 @@ export default function AllMenuPage() {
         <>
           <div className="menu-grid">
             {pageItems.map((item) => (
-              <MenuCard key={item.id} item={item} />
+              <MenuCard key={item.id} item={item} orderingClosed={orderingClosed} />
             ))}
           </div>
           <Pagination

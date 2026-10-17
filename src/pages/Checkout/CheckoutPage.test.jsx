@@ -103,3 +103,42 @@ test('falls back to placeholder cart rows with a banner when supabase is unreach
   expect(screen.getByText('Pork Adobo')).toBeInTheDocument()
   expect(screen.getByText(/Total: ₱140/)).toBeInTheDocument()
 })
+
+const cartItem = { id: 'placeholder-pork-adobo', name: 'Pork Adobo', price: 70, serving_count: 5 }
+const openStatus = () => makeThenable({ data: { is_open: true }, error: null })
+const closedStatus = () => makeThenable({ data: { is_open: false }, error: null })
+
+test('shows a closed notice and disables Place Order while the canteen is closed', async () => {
+  supabase.from.mockImplementation((table) =>
+    table === 'canteen_settings' ? closedStatus() : makeThenable({ data: [cartItem], error: null }),
+  )
+
+  renderPage()
+
+  expect(await screen.findByText('Pork Adobo')).toBeInTheDocument()
+  expect(await screen.findByText(/the canteen is closed right now/i)).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /place order/i })).toBeDisabled()
+  expect(supabase.rpc).not.toHaveBeenCalled()
+})
+
+test('when the server refuses because the canteen just closed, it says why and updates the page', async () => {
+  const status = jest.fn().mockReturnValueOnce(openStatus()).mockReturnValue(closedStatus())
+  supabase.from.mockImplementation((table) =>
+    table === 'canteen_settings' ? status() : makeThenable({ data: [cartItem], error: null }),
+  )
+  supabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'u1' } }, error: null })
+  supabase.rpc.mockResolvedValue({
+    data: null,
+    error: { message: 'The canteen is closed right now. Please try again when it reopens.' },
+  })
+
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByText('Pork Adobo')
+  await user.click(screen.getByRole('button', { name: /place order/i }))
+
+  expect(await screen.findByText(/please try again when it reopens/i)).toBeInTheDocument()
+  expect(await screen.findByText(/you can browse the menu/i)).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /place order/i })).toBeDisabled()
+  expect(mockUseCart.clearCart).not.toHaveBeenCalled()
+})

@@ -48,7 +48,8 @@ test('shows an error, no placeholder items, and a disabled Place Order when the 
 })
 
 test('Retry re-runs the fetch and enables ordering once items load', async () => {
-  supabase.from
+  const menuQuery = jest
+    .fn()
     .mockReturnValueOnce(makeThenable({ data: null, error: { message: 'fetch failed' } }))
     .mockReturnValue(
       makeThenable({
@@ -56,6 +57,9 @@ test('Retry re-runs the fetch and enables ordering once items load', async () =>
         error: null,
       }),
     )
+  supabase.from.mockImplementation((table) =>
+    table === 'canteen_settings' ? makeThenable({ data: { is_open: true }, error: null }) : menuQuery(table),
+  )
 
   const user = userEvent.setup()
   renderPage()
@@ -64,5 +68,5 @@ test('Retry re-runs the fetch and enables ordering once items load', async () =>
 
   expect(await screen.findByText('Pork Adobo')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: /place order/i })).toBeEnabled()
-  expect(supabase.from).toHaveBeenCalledTimes(2)
+  expect(menuQuery).toHaveBeenCalledTimes(2)
 })

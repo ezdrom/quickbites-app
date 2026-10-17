@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Button from '../../components/Button.jsx'
+import CanteenStatusControl from '../../components/CanteenStatusControl.jsx'
 import { supabase } from '../../lib/supabaseClient.js'
 
 export default function CanteenOrdersPage() {
@@ -119,6 +120,8 @@ export default function CanteenOrdersPage() {
           Manage Menu
         </Link>
       </div>
+
+      <CanteenStatusControl />
 
       {error && <p className="auth-error">{error}</p>}
 

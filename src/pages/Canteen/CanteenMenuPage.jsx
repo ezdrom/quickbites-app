@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import FormField from '../../components/FormField.jsx'
 import Button from '../../components/Button.jsx'
+import CanteenStatusControl from '../../components/CanteenStatusControl.jsx'
 import { supabase } from '../../lib/supabaseClient.js'
 import LoadError from '../../components/LoadError.jsx'
 import { placeholderMenuItems } from '../../data/placeholderMenuItems.js'
@@ -224,6 +225,8 @@ export default function CanteenMenuPage() {
           View Orders
         </Link>
       </div>
+
+      <CanteenStatusControl />
 
       {demoMode && (
         <p className="auth-status">

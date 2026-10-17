@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useCart } from '../context/CartContext.jsx'
 
-export default function MenuCard({ item }) {
+export default function MenuCard({ item, orderingClosed = false }) {
   const { items, addItem } = useCart()
   const [isFavorited, setIsFavorited] = useState(false)
   const quantity = items[item.id] ?? 0
@@ -37,7 +37,8 @@ export default function MenuCard({ item }) {
               type="button"
               className="menu-card-add"
               onClick={() => addItem(item.id)}
-              disabled={!item.available}
+              disabled={!item.available || orderingClosed}
+              title={orderingClosed ? 'The canteen is closed' : undefined}
               aria-label={`Add ${item.name} to cart`}
             >
               +
