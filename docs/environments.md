@@ -51,7 +51,8 @@ publishable key in the frontend, never `service_role`.
 3. Merge `develop` into `main` and approve the production run in Actions. The summary lists the pending migrations.
 4. First admin on PRD: sign up in the app, then in the SQL Editor:
    `update public.profiles set role = 'admin' where email = '<your email>';`
-   (Signup cannot create admins.)
+   (Signup always creates a student.)
+5. Canteen staff register like everyone else, then you promote them in the admin dashboard (role dropdown).
 
 ## Projects that were migrated by hand
 If a project received migrations with `supabase db push` before `20260803000000_bootstrap_profiles_table.sql`
