@@ -104,6 +104,32 @@ const { data } = await supabase.rpc('admin_top_items', { p_from: '2026-10-01', p
 
 Same completed-orders / Asia/Manila / inclusive-range rules as above. `p_limit` is 1 to 100. Errors: `not authorized`; `p_from and p_to are required`; `p_from must not be after p_to`; `p_limit must be between 1 and 100` (22023).
 
+## Canteen open / closed
+
+Migration `20261017000000_canteen_open_status.sql`. One row in `canteen_settings` says whether the canteen is taking orders. Anyone, including signed-out visitors, can read it:
+
+```js
+const { data } = await supabase.from('canteen_settings').select('is_open').eq('id', true).single()
+```
+
+### `set_canteen_open(p_open boolean) returns canteen_settings`
+
+```js
+const { data, error } = await supabase.rpc('set_canteen_open', { p_open: false })
+```
+
+- Who: `canteen` and `admin`. The table has no write policies, so this function is the only way to change it.
+- Returns the row (`id, is_open, updated_at, updated_by`).
+
+| message | code | when |
+|---|---|---|
+| `Only canteen staff or admins can open or close the canteen` | 42501 | any other signed-in user (anonymous callers get a plain permission error) |
+| `p_open is required` | P0001 | `null` |
+
+### `place_order` while closed
+
+`place_order` refuses with `The canteen is closed right now. Please try again when it reopens.` (code `P0001`) and changes nothing: no order is created and no stock is taken. Orders already placed are unaffected, and staff can keep fulfilling them.
+
 ## Helpers (rarely needed from the client)
 
 - `is_admin()` and `is_canteen_or_admin()` return a boolean for the current user. They are handy for route guards: `supabase.rpc('is_admin')`.

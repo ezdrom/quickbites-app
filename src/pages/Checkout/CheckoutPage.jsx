@@ -4,12 +4,16 @@ import { useCart } from '../../context/CartContext.jsx'
 import Button from '../../components/Button.jsx'
 import { supabase } from '../../lib/supabaseClient.js'
 import LoadError from '../../components/LoadError.jsx'
+import CanteenClosedNotice from '../../components/CanteenClosedNotice.jsx'
+import useCanteenStatus from '../../hooks/useCanteenStatus.js'
 import { placeholderMenuItems } from '../../data/placeholderMenuItems.js'
 import { allowPlaceholderData } from '../../lib/env.js'
 
 export default function CheckoutPage() {
   const navigate = useNavigate()
   const { items, updateQuantity, clearCart } = useCart()
+  const { isOpen, refresh: refreshCanteenStatus } = useCanteenStatus()
+  const orderingClosed = isOpen === false
   const [menuItems, setMenuItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [usingPlaceholder, setUsingPlaceholder] = useState(false)
@@ -73,7 +77,7 @@ export default function CheckoutPage() {
   const total = cartRows.reduce((sum, row) => sum + row.subtotal, 0)
 
   async function handlePlaceOrder() {
-    if (loadError || (usingPlaceholder && !allowPlaceholderData)) return
+    if (loadError || orderingClosed || (usingPlaceholder && !allowPlaceholderData)) return
     setError('')
     setPlacingOrder(true)
 
@@ -91,6 +95,7 @@ export default function CheckoutPage() {
 
       if (placeError) {
         setError(placeError.message)
+        refreshCanteenStatus()
         const { data: refreshed } = await supabase.from('menu_items').select('*').in('id', cartIds)
         if (refreshed) setMenuItems(refreshed)
         return
@@ -138,6 +143,8 @@ export default function CheckoutPage() {
   return (
     <div className="checkout-page">
       <h1 className="menu-page-title">Checkout</h1>
+
+      {orderingClosed && <CanteenClosedNotice />}
 
       {usingPlaceholder && (
         <p className="auth-status">
@@ -194,7 +201,7 @@ export default function CheckoutPage() {
           <p className="checkout-total">Total: ₱{total}</p>
           {error && <p className="auth-error">{error}</p>}
 
-          <Button type="button" disabled={placingOrder} onClick={handlePlaceOrder}>
+          <Button type="button" disabled={placingOrder || orderingClosed} onClick={handlePlaceOrder}>
             {placingOrder ? 'Placing order...' : 'Place Order'}
           </Button>
         </>
