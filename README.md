@@ -78,7 +78,6 @@ Settings -> Secrets and variables -> Actions:
 
 | Secret | Used by |
 | --- | --- |
-| `ANTHROPIC_API_KEY` | `claude.yml` (automated PR review and `@claude` mentions). |
 | `VITE_SUPABASE_URL` | `release.yml` (APK is built against the real project). |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | `release.yml`. |
 | `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_ID`, `SUPABASE_DB_PASSWORD` | `supabase-sync.yml` (migration deploy on `main`). |
