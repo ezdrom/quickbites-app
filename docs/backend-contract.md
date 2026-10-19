@@ -134,5 +134,5 @@ const { data, error } = await supabase.rpc('set_canteen_open', { p_open: false }
 
 - `is_admin()` and `is_canteen_or_admin()` return a boolean for the current user. They are handy for route guards: `supabase.rpc('is_admin')`.
 
-## Signup role clamp
-`handle_new_user()` (migration 20261008000004) only honours `student` and `canteen` from signup metadata; any other value (including `admin`) becomes `student`. Promote admins with `admin_set_user_role`.
+## Signup always creates a student
+`handle_new_user()` (migration 20261017000001) ignores any `role` in the signup metadata, so every new account is a `student`. Privileged roles (`canteen`, `admin`, ...) are granted by an admin with `admin_set_user_role`; the admin dashboard has a role dropdown for it. An earlier version (20261008000004) still honoured `canteen` from the signup request, which let anyone register as canteen staff.

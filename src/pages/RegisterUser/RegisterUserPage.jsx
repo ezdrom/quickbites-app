@@ -8,11 +8,6 @@ import greenBg from '../../assets/images/green-background.png';
 import jrccLogo from '../../assets/images/jrcc-logo.png';
 import quickbitesLogo from '../../assets/images/quickbites-logo.png';
 
-const ROLE_VALUES = {
-  Student: 'student',
-  'Canteen Staff': 'canteen',
-};
-
 export default function RegisterUserPage() {
   const navigate = useNavigate();
 
@@ -21,7 +16,6 @@ export default function RegisterUserPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('Student'); // Added role state
 
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -46,7 +40,6 @@ export default function RegisterUserPage() {
         options: {
           data: {
             full_name: `${firstName} ${lastName}`.trim(),
-            role: ROLE_VALUES[role] ?? 'student',
           },
         },
       });
@@ -224,33 +217,9 @@ export default function RegisterUserPage() {
               />
             </div>
 
-            {/* ROLE / I AM REGISTERING AS DROPDOWN */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label htmlFor="role" style={{ fontSize: '13px', fontWeight: 'normal', marginBottom: '4px', color: '#000' }}>
-                I am registering as
-              </label>
-              <select
-                id="role"
-                name="role"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                required
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  borderRadius: '10px',
-                  border: '1.5px solid #000',
-                  fontSize: '14px',
-                  outline: 'none',
-                  backgroundColor: '#fff',
-                  cursor: 'pointer',
-                  boxSizing: 'border-box'
-                }}
-              >
-                <option value="Student">Student</option>
-                <option value="Canteen Staff">Canteen Staff</option>
-              </select>
-            </div>
+            <p style={{ fontSize: '12px', color: '#555', margin: 0, textAlign: 'center' }}>
+              Canteen staff accounts are set up by an administrator after you register.
+            </p>
 
             {/* SIGN UP BUTTON */}
             <button
