@@ -17,8 +17,13 @@ Actions environments and secrets need **admin** on the repo. With only write acc
 - Create `quickbites-qa` and `quickbites-prd` (same region). Store each database password in a password manager.
 - Auth -> URL Configuration, per project: Site URL is that environment's web URL; add its `/reset-password`
   to Redirect URLs. QA also needs `http://localhost:4173/**` and a wildcard for Vercel preview URLs.
-- PRD: set custom SMTP (Auth -> SMTP). The built-in sender is heavily rate-limited.
-- Free projects pause after about a week idle. Put PRD on a paid plan.
+- Email, on both projects: turn **off** "Confirm email" (Authentication -> Sign In / Providers -> Email), so signing up
+  sends nothing and only password-reset emails go out. The built-in sender only emails your own team's addresses (2 per
+  hour), so for resets to reach students set custom SMTP (Authentication -> SMTP Settings). With custom SMTP Supabase
+  starts at 30 emails per hour; raise it under Authentication -> Rate Limits if needed. Free tiers of the usual providers
+  cap at 100 per day (Resend) or 300 per day (Brevo), and need a verified sender.
+- Free projects pause after about a week without enough database activity. Production gets a scheduled keep-alive
+  (step 5); a paid plan removes the pause entirely.
 
 ### 3. GitHub: environments and secrets
 Settings -> Environments:
@@ -43,6 +48,19 @@ Import the repo; Production Branch is `main`. Settings -> Environment Variables:
 
 `VITE_*` values are baked in at build time, so redeploy after changing them. Only ever use the
 publishable key in the frontend, never `service_role`.
+
+### 5. Keep production awake (free plan)
+`.github/workflows/keep-alive.yml` makes a few read requests to the production project every 8 hours. It needs these
+at repository level (not in the `production` environment, which waits for approval):
+
+```bash
+gh variable set PRD_SUPABASE_URL --body "https://<prd-ref>.supabase.co"
+gh secret set PRD_SUPABASE_PUBLISHABLE_KEY
+```
+
+Scheduled workflows only run from the default branch (`main`), so this starts after the first promotion. GitHub also
+disables scheduled workflows in a public repo after 60 days without repository activity; any commit before then keeps
+it going, and a disabled one can be re-enabled from the Actions tab. A failed run means production could not be reached.
 
 ## First deploy
 1. Push to `develop`, or Actions -> Supabase CI/CD -> Run workflow -> `qa`. A brand-new project gets every
