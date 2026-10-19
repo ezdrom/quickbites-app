@@ -11,3 +11,21 @@ export function makeThenable(result) {
   builder.then = (resolve, reject) => Promise.resolve(result).then(resolve, reject)
   return builder
 }
+
+export const mainLocation = { id: 'loc-main', name: 'Main', sort_order: 1, is_open: true }
+export const annexLocation = { id: 'loc-annex', name: 'Annex', sort_order: 2, is_open: true }
+
+// The result of reading `locations`, with optional per-location overrides,
+// e.g. locationsResult({ Annex: { is_open: false } }).
+export function locationsResult(overrides = {}) {
+  return {
+    data: [mainLocation, annexLocation].map((location) => ({ ...location, ...overrides[location.name] })),
+    error: null,
+  }
+}
+
+// Route supabase.from(table) to a result per table. Tables not listed resolve
+// to empty data, so a page never receives another table's rows by accident.
+export function routeTables(supabase, tables) {
+  supabase.from.mockImplementation((table) => makeThenable(tables[table] ?? { data: [], error: null }))
+}

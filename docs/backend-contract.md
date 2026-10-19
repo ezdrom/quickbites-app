@@ -104,31 +104,53 @@ const { data } = await supabase.rpc('admin_top_items', { p_from: '2026-10-01', p
 
 Same completed-orders / Asia/Manila / inclusive-range rules as above. `p_limit` is 1 to 100. Errors: `not authorized`; `p_from and p_to are required`; `p_from must not be after p_to`; `p_limit must be between 1 and 100` (22023).
 
-## Canteen open / closed
+## Pickup locations (Main and Annex)
 
-Migration `20261017000000_canteen_open_status.sql`. One row in `canteen_settings` says whether the canteen is taking orders. Anyone, including signed-out visitors, can read it:
+Migration `20261019000000_locations_main_and_annex.sql` (replaces the single canteen open/closed switch from `20261017000000`; `canteen_settings` and `set_canteen_open` no longer exist). The menu and its stock are shared; only the pickup location and its open/closed state differ. Staff are not tied to a location.
 
-```js
-const { data } = await supabase.from('canteen_settings').select('is_open').eq('id', true).single()
-```
-
-### `set_canteen_open(p_open boolean) returns canteen_settings`
+`locations` is readable by everyone, including signed-out visitors, and has no write policies:
 
 ```js
-const { data, error } = await supabase.rpc('set_canteen_open', { p_open: false })
+const { data } = await supabase.from('locations').select('id, name, sort_order, is_open').order('sort_order')
+// [{ id, name: 'Main', sort_order: 1, is_open: true }, { id, name: 'Annex', ... }]
 ```
 
-- Who: `canteen` and `admin`. The table has no write policies, so this function is the only way to change it.
-- Returns the row (`id, is_open, updated_at, updated_by`).
+`orders.location_id` (uuid, not null) says where an order is picked up. Embed the name with `.select('*, locations(name)')`. Orders that existed before this migration were assigned to Main.
+
+### `set_location_open(p_location_id uuid, p_open boolean) returns locations`
+
+```js
+const { data, error } = await supabase.rpc('set_location_open', { p_location_id: id, p_open: false })
+```
+
+- Who: `canteen` and `admin`. This function is the only way to change `is_open`.
+- Returns the updated row.
 
 | message | code | when |
 |---|---|---|
-| `Only canteen staff or admins can open or close the canteen` | 42501 | any other signed-in user (anonymous callers get a plain permission error) |
-| `p_open is required` | P0001 | `null` |
+| `Only canteen staff or admins can open or close a location` | 42501 | any other signed-in user (anonymous callers get a plain permission error) |
+| `p_location_id and p_open are required` | 22023 | either is `null` |
+| `location not found` | P0002 | no such location |
 
-### `place_order` while closed
+### `place_order(cart_items jsonb, p_location_id uuid, special_instructions text default null, pickup_time timestamptz default null)`
 
-`place_order` refuses with `The canteen is closed right now. Please try again when it reopens.` (code `P0001`) and changes nothing: no order is created and no stock is taken. Orders already placed are unaffected, and staff can keep fulfilling them.
+```js
+const { data, error } = await supabase.rpc('place_order', {
+  cart_items: [{ menu_item_id, quantity: 2 }],
+  p_location_id: locationId,
+})
+```
+
+The location is required. It is checked and locked inside the same transaction as the stock update, so a location that closes mid-checkout cannot still take the order. Orders can only be created through this function; the direct-insert policies on `orders` and `order_items` were removed in `20261019000001`.
+
+| message | when |
+|---|---|
+| `Choose a pickup location` | `p_location_id` is null |
+| `Unknown pickup location` | no such location |
+| `<Name> is closed right now. Please try again when it reopens.` | that location is closed. Nothing is created and no stock is taken |
+| `Cart is empty` | no items |
+
+Orders already placed are unaffected by a location closing, and staff can keep fulfilling them. Stock errors are unchanged.
 
 ## Helpers (rarely needed from the client)
 

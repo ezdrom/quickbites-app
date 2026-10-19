@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import CheckoutPage from './CheckoutPage.jsx'
 import { supabase } from '../../lib/supabaseClient.js'
-import { makeThenable } from '../../test/supabaseMock.js'
+import { locationsResult, makeThenable, routeTables } from '../../test/supabaseMock.js'
 
 const mockUseCart = {
   items: {},
@@ -35,7 +35,7 @@ beforeEach(() => {
 })
 
 test('shows an error, no placeholder items, and a disabled Place Order when the fetch fails', async () => {
-  supabase.from.mockReturnValue(makeThenable({ data: null, error: { message: 'fetch failed' } }))
+  routeTables(supabase, { menu_items: { data: null, error: { message: 'fetch failed' } }, locations: locationsResult() })
 
   renderPage()
 
@@ -58,7 +58,7 @@ test('Retry re-runs the fetch and enables ordering once items load', async () =>
       }),
     )
   supabase.from.mockImplementation((table) =>
-    table === 'canteen_settings' ? makeThenable({ data: { is_open: true }, error: null }) : menuQuery(table),
+    table === 'locations' ? makeThenable(locationsResult()) : menuQuery(table),
   )
 
   const user = userEvent.setup()
@@ -69,4 +69,26 @@ test('Retry re-runs the fetch and enables ordering once items load', async () =>
   expect(await screen.findByText('Pork Adobo')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: /place order/i })).toBeEnabled()
   expect(menuQuery).toHaveBeenCalledTimes(2)
+})
+
+test('cannot place an order, and offers Retry, when the locations cannot be loaded', async () => {
+  const locations = jest
+    .fn()
+    .mockReturnValueOnce({ data: null, error: { message: 'fetch failed' } })
+    .mockReturnValue(locationsResult())
+  const menu = { data: [{ id: 'placeholder-pork-adobo', name: 'Pork Adobo', price: 70, serving_count: 5 }], error: null }
+  supabase.from.mockImplementation((table) => makeThenable(table === 'locations' ? locations() : menu))
+
+  const user = userEvent.setup()
+  renderPage()
+
+  expect(await screen.findByText(/couldn't load the pickup locations/i)).toBeInTheDocument()
+  expect(await screen.findByText('Pork Adobo')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /place order/i })).toBeDisabled()
+  expect(supabase.rpc).not.toHaveBeenCalled()
+
+  await user.click(screen.getByRole('button', { name: /retry/i }))
+
+  expect(await screen.findByRole('radio', { name: /main/i })).toBeChecked()
+  expect(screen.getByRole('button', { name: /place order/i })).toBeEnabled()
 })

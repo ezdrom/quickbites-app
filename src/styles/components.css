@@ -1087,15 +1087,21 @@
 /* ---------- Canteen open / closed ---------- */
 .canteen-status {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 12px;
   background: var(--qb-card-bg);
   border: 1px solid var(--qb-border-color);
   border-radius: var(--qb-radius-md);
   padding: 14px 18px;
   margin-bottom: 20px;
+}
+
+.canteen-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .canteen-status .btn {
@@ -1104,7 +1110,6 @@
 }
 
 .canteen-status .auth-error {
-  flex-basis: 100%;
   margin: 0;
 }
 
@@ -1140,13 +1145,121 @@
   padding: 12px 16px;
 }
 
+/* ---------- Pickup location picker ---------- */
+.location-picker {
+  border: 0;
+  margin: 0 0 20px;
+  padding: 0;
+  min-width: 0;
+}
+
+.location-picker-legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--qb-text-heading);
+}
+
+.location-picker-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.location-option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--qb-card-bg);
+  border: 2px solid var(--qb-border-color);
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--qb-text-heading);
+}
+
+.location-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.location-option-selected {
+  border-color: var(--qb-green-accent);
+  background: var(--qb-green-accent);
+  color: #fff;
+}
+
+.location-option:has(input:focus-visible) {
+  outline: 3px solid var(--qb-gold);
+  outline-offset: 2px;
+}
+
+.location-option-status {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--qb-badge-available);
+  color: #fff;
+}
+
+.location-option-closed .location-option-status {
+  background: #B3261E;
+}
+
+.location-option-selected .location-option-status {
+  background: #fff;
+  color: var(--qb-green-dark);
+}
+
+.location-option-selected.location-option-closed .location-option-status {
+  background: #fff;
+  color: #B3261E;
+}
+
+.location-picker-error {
+  margin-bottom: 20px;
+}
+
+.location-picker-error .btn {
+  width: auto;
+  padding: 8px 18px;
+}
+
+.canteen-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--qb-text-heading);
+}
+
+.canteen-filter select {
+  padding: 8px 12px;
+  border: 1px solid var(--qb-border-color);
+  border-radius: var(--qb-radius-sm);
+  background: var(--qb-card-bg);
+  font-size: 0.9rem;
+}
+
 @media (max-width: 600px) {
-  .canteen-status {
+  .canteen-status-row {
     flex-direction: column;
     align-items: stretch;
   }
 
   .canteen-status .btn {
     width: 100%;
+  }
+
+  .canteen-filter {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
   }
 }
