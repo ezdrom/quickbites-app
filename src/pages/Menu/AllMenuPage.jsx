@@ -6,7 +6,8 @@ import { useCart } from '../../context/CartContext.jsx'
 import { supabase } from '../../lib/supabaseClient.js'
 import LoadError from '../../components/LoadError.jsx'
 import CanteenClosedNotice from '../../components/CanteenClosedNotice.jsx'
-import useCanteenStatus from '../../hooks/useCanteenStatus.js'
+import LocationPicker from '../../components/LocationPicker.jsx'
+import useSelectedLocation from '../../hooks/useSelectedLocation.js'
 import { placeholderMenuItems } from '../../data/placeholderMenuItems.js'
 import { allowPlaceholderData } from '../../lib/env.js'
 
@@ -25,8 +26,8 @@ function toCardItem(row) {
 
 export default function AllMenuPage() {
   const { totalCount } = useCart()
-  const { isOpen } = useCanteenStatus()
-  const orderingClosed = isOpen === false
+  const pickup = useSelectedLocation()
+  const { orderingClosed } = pickup
   const [menuItems, setMenuItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [usingPlaceholder, setUsingPlaceholder] = useState(false)
@@ -89,7 +90,21 @@ export default function AllMenuPage() {
         )}
       </div>
 
-      {orderingClosed && <CanteenClosedNotice />}
+      <LocationPicker
+        locations={pickup.locations}
+        selected={pickup.selected}
+        onSelect={pickup.selectLocation}
+        loading={pickup.loading}
+        failed={pickup.failed}
+        onRetry={pickup.refresh}
+      />
+
+      {orderingClosed && (
+        <CanteenClosedNotice
+          locationName={pickup.selected.name}
+          openElsewhere={pickup.openElsewhere.map((l) => l.name)}
+        />
+      )}
 
       {usingPlaceholder && (
         <p className="auth-status">

@@ -34,6 +34,7 @@ function OrderCard({ order, cancelling, cancelError, onCancel }) {
         <div>
           <p className="canteen-item-name">Order #{order.id.slice(0, 8)}</p>
           {placed && <p className="canteen-item-meta">Placed {placed}</p>}
+          {order.locations?.name && <p className="canteen-item-meta">Pickup: {order.locations.name}</p>}
         </div>
         <span className={`orders-badge orders-badge-${order.status}`}>{label}</span>
       </div>
@@ -92,7 +93,7 @@ export default function OrdersPage() {
       try {
         const { data, error } = await supabase
           .from('orders')
-          .select('*, order_items(quantity, unit_price, menu_items(name))')
+          .select('*, locations(name), order_items(quantity, unit_price, menu_items(name))')
           .eq('user_id', userId)
           .order('created_at', { ascending: false })
         if (seq !== loadSeq.current) return

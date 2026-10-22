@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import AllMenuPage from './AllMenuPage.jsx'
 import { CartProvider } from '../../context/CartContext.jsx'
 import { supabase } from '../../lib/supabaseClient.js'
-import { makeThenable } from '../../test/supabaseMock.js'
+import { locationsResult, makeThenable, routeTables } from '../../test/supabaseMock.js'
 
 jest.mock('../../lib/env.js', () => ({ isDev: false, isDemoMode: false, allowPlaceholderData: false }))
 
@@ -27,7 +27,7 @@ beforeEach(() => {
 })
 
 test('shows an error with Retry and no sample items when the fetch fails in production', async () => {
-  supabase.from.mockReturnValue(makeThenable({ data: null, error: { message: 'fetch failed' } }))
+  routeTables(supabase, { menu_items: { data: null, error: { message: 'fetch failed' } }, locations: locationsResult() })
 
   renderPage()
 
@@ -50,7 +50,7 @@ test('Retry re-runs the fetch and shows the real menu', async () => {
       }),
     )
   supabase.from.mockImplementation((table) =>
-    table === 'canteen_settings' ? makeThenable({ data: { is_open: true }, error: null }) : menuQuery(table),
+    table === 'locations' ? makeThenable(locationsResult()) : menuQuery(table),
   )
 
   const user = userEvent.setup()
@@ -61,4 +61,27 @@ test('Retry re-runs the fetch and shows the real menu', async () => {
   expect(await screen.findByText('Real Sinigang')).toBeInTheDocument()
   expect(screen.queryByText(/couldn't load the menu/i)).not.toBeInTheDocument()
   expect(menuQuery).toHaveBeenCalledTimes(2)
+})
+
+test('shows an error with Retry, not sample locations, when the locations cannot be loaded in production', async () => {
+  const locations = jest
+    .fn()
+    .mockReturnValueOnce({ data: null, error: { message: 'fetch failed' } })
+    .mockReturnValue(locationsResult())
+  const menu = {
+    data: [{ id: '1', name: 'Real Sinigang', price: 80, description: 'd', is_available: true, serving_count: 4 }],
+    error: null,
+  }
+  supabase.from.mockImplementation((table) => makeThenable(table === 'locations' ? locations() : menu))
+
+  const user = userEvent.setup()
+  renderPage()
+
+  expect(await screen.findByText(/couldn't load the pickup locations/i)).toBeInTheDocument()
+  expect(screen.queryByRole('radio')).not.toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: /retry/i }))
+
+  expect(await screen.findByRole('radio', { name: /main/i })).toBeInTheDocument()
+  expect(screen.queryByText(/couldn't load the pickup locations/i)).not.toBeInTheDocument()
 })

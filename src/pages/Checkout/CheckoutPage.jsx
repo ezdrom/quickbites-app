@@ -5,15 +5,17 @@ import Button from '../../components/Button.jsx'
 import { supabase } from '../../lib/supabaseClient.js'
 import LoadError from '../../components/LoadError.jsx'
 import CanteenClosedNotice from '../../components/CanteenClosedNotice.jsx'
-import useCanteenStatus from '../../hooks/useCanteenStatus.js'
+import LocationPicker from '../../components/LocationPicker.jsx'
+import useSelectedLocation from '../../hooks/useSelectedLocation.js'
 import { placeholderMenuItems } from '../../data/placeholderMenuItems.js'
 import { allowPlaceholderData } from '../../lib/env.js'
 
 export default function CheckoutPage() {
   const navigate = useNavigate()
   const { items, updateQuantity, clearCart } = useCart()
-  const { isOpen, refresh: refreshCanteenStatus } = useCanteenStatus()
-  const orderingClosed = isOpen === false
+  const pickup = useSelectedLocation()
+  const { selected, orderingClosed, refresh: refreshLocations } = pickup
+  const [confirmedLocation, setConfirmedLocation] = useState('')
   const [menuItems, setMenuItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [usingPlaceholder, setUsingPlaceholder] = useState(false)
@@ -77,7 +79,7 @@ export default function CheckoutPage() {
   const total = cartRows.reduce((sum, row) => sum + row.subtotal, 0)
 
   async function handlePlaceOrder() {
-    if (loadError || orderingClosed || (usingPlaceholder && !allowPlaceholderData)) return
+    if (loadError || orderingClosed || !selected || (usingPlaceholder && !allowPlaceholderData)) return
     setError('')
     setPlacingOrder(true)
 
@@ -91,17 +93,19 @@ export default function CheckoutPage() {
 
       const { data: order, error: placeError } = await supabase.rpc('place_order', {
         cart_items: cartRows.map((row) => ({ menu_item_id: row.id, quantity: row.quantity })),
+        p_location_id: selected.id,
       })
 
       if (placeError) {
         setError(placeError.message)
-        refreshCanteenStatus()
+        refreshLocations()
         const { data: refreshed } = await supabase.from('menu_items').select('*').in('id', cartIds)
         if (refreshed) setMenuItems(refreshed)
         return
       }
 
       clearCart()
+      setConfirmedLocation(selected.name)
       setConfirmedOrder(order)
     } catch {
       setError("Can't reach Supabase right now. Please try again once the connection is back.")
@@ -117,6 +121,7 @@ export default function CheckoutPage() {
         <p className="auth-status">
           Your order has been placed for ₱{confirmedOrder.total_amount}. Status: {confirmedOrder.status}.
         </p>
+        <p className="auth-status">Pick it up at {confirmedLocation}.</p>
         <Link to="/orders" className="auth-inline-link">
           Track your order
         </Link>
@@ -144,7 +149,21 @@ export default function CheckoutPage() {
     <div className="checkout-page">
       <h1 className="menu-page-title">Checkout</h1>
 
-      {orderingClosed && <CanteenClosedNotice />}
+      <LocationPicker
+        locations={pickup.locations}
+        selected={selected}
+        onSelect={pickup.selectLocation}
+        loading={pickup.loading}
+        failed={pickup.failed}
+        onRetry={pickup.refresh}
+      />
+
+      {orderingClosed && (
+        <CanteenClosedNotice
+          locationName={selected.name}
+          openElsewhere={pickup.openElsewhere.map((l) => l.name)}
+        />
+      )}
 
       {usingPlaceholder && (
         <p className="auth-status">
@@ -201,7 +220,7 @@ export default function CheckoutPage() {
           <p className="checkout-total">Total: ₱{total}</p>
           {error && <p className="auth-error">{error}</p>}
 
-          <Button type="button" disabled={placingOrder || orderingClosed} onClick={handlePlaceOrder}>
+          <Button type="button" disabled={placingOrder || orderingClosed || !selected} onClick={handlePlaceOrder}>
             {placingOrder ? 'Placing order...' : 'Place Order'}
           </Button>
         </>

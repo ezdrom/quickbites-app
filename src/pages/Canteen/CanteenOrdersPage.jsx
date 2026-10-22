@@ -2,9 +2,12 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Button from '../../components/Button.jsx'
 import CanteenStatusControl from '../../components/CanteenStatusControl.jsx'
+import useLocations from '../../hooks/useLocations.js'
 import { supabase } from '../../lib/supabaseClient.js'
 
 export default function CanteenOrdersPage() {
+  const { locations } = useLocations({ pollMs: 0 })
+  const [locationFilter, setLocationFilter] = useState('all')
   const [authorized, setAuthorized] = useState(null)
   const [connectionError, setConnectionError] = useState(false)
   const [orders, setOrders] = useState([])
@@ -58,7 +61,7 @@ export default function CanteenOrdersPage() {
     try {
       const { data, error: fetchError } = await supabase
         .from('orders')
-        .select('*, order_items(quantity, unit_price, menu_items(name))')
+        .select('*, locations(name), order_items(quantity, unit_price, menu_items(name))')
         .neq('status', 'completed')
         .neq('status', 'cancelled')
         .order('created_at', { ascending: true })
@@ -89,6 +92,10 @@ export default function CanteenOrdersPage() {
     }
     setOrders((prev) => prev.filter((order) => order.id !== orderId))
   }
+
+  const visibleOrders =
+    locationFilter === 'all' ? orders : orders.filter((order) => order.location_id === locationFilter)
+  const filterName = locations.find((l) => l.id === locationFilter)?.name
 
   if (authorized === null) {
     return (
@@ -137,12 +144,29 @@ export default function CanteenOrdersPage() {
         <p className="auth-status">No orders waiting for pickup.</p>
       ) : (
         <div className="canteen-list">
-          {orders.map((order) => (
+          {locations.length > 1 && (
+            <label className="canteen-filter">
+              Show orders for
+              <select value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)}>
+                <option value="all">All locations</option>
+                {locations.map((location) => (
+                  <option key={location.id} value={location.id}>
+                    {location.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {visibleOrders.length === 0 && (
+            <p className="auth-status">No orders waiting for pickup at {filterName ?? 'this location'}.</p>
+          )}
+          {visibleOrders.map((order) => (
             <div key={order.id} className="canteen-item canteen-order-item">
               <div className="canteen-item-info">
                 <p className="canteen-item-name">
                   Order #{order.id.slice(0, 8)} — ₱{order.total_amount}
                 </p>
+                <p className="canteen-item-meta">Pickup: {order.locations?.name ?? 'Unknown location'}</p>
                 <p className="canteen-item-meta">Status: {order.status}</p>
                 <ul className="canteen-order-lines">
                   {order.order_items.map((line, index) => (

@@ -75,7 +75,7 @@ test('queries only the signed-in user orders, newest first', async () => {
 
   await screen.findByText('Order #aaaaaaaa')
   expect(supabase.from).toHaveBeenCalledWith('orders')
-  expect(builder.select).toHaveBeenCalledWith('*, order_items(quantity, unit_price, menu_items(name))')
+  expect(builder.select).toHaveBeenCalledWith('*, locations(name), order_items(quantity, unit_price, menu_items(name))')
   expect(builder.eq).toHaveBeenCalledWith('user_id', 'user-1')
   expect(builder.order).toHaveBeenCalledWith('created_at', { ascending: false })
 })
@@ -90,6 +90,23 @@ test('renders order details: short id, items, total, note', async () => {
   expect(card.getByText('Total: ₱55')).toBeInTheDocument()
   expect(card.getByText(/No onions please/)).toBeInTheDocument()
   expect(card.getByText(/Placed/)).toBeInTheDocument()
+})
+
+test('shows where each order is picked up', async () => {
+  supabase.from.mockReturnValue(
+    makeThenable({
+      data: [
+        makeOrder({ locations: { name: 'Annex' } }),
+        makeOrder({ id: 'eeeeeeee-1111-2222-3333-444444444444', locations: { name: 'Main' } }),
+      ],
+      error: null,
+    }),
+  )
+
+  renderPage()
+
+  expect(within(await screen.findByText('Order #aaaaaaaa').then(() => cardFor('aaaaaaaa'))).getByText('Pickup: Annex')).toBeInTheDocument()
+  expect(within(cardFor('eeeeeeee')).getByText('Pickup: Main')).toBeInTheDocument()
 })
 
 test('lists active orders above a Past orders section', async () => {
