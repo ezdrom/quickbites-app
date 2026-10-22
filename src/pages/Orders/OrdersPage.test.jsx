@@ -75,7 +75,7 @@ test('queries only the signed-in user orders, newest first', async () => {
 
   await screen.findByText('Order #aaaaaaaa')
   expect(supabase.from).toHaveBeenCalledWith('orders')
-  expect(builder.select).toHaveBeenCalledWith('*, locations(name), order_items(quantity, unit_price, menu_items(name))')
+  expect(builder.select).toHaveBeenCalledWith('*, locations(name), order_pickup_codes(code), order_items(quantity, unit_price, menu_items(name))')
   expect(builder.eq).toHaveBeenCalledWith('user_id', 'user-1')
   expect(builder.order).toHaveBeenCalledWith('created_at', { ascending: false })
 })
@@ -90,6 +90,42 @@ test('renders order details: short id, items, total, note', async () => {
   expect(card.getByText('Total: ₱55')).toBeInTheDocument()
   expect(card.getByText(/No onions please/)).toBeInTheDocument()
   expect(card.getByText(/Placed/)).toBeInTheDocument()
+})
+
+test('shows the pickup code on orders that are still waiting, with what to do with it', async () => {
+  supabase.from.mockReturnValue(
+    makeThenable({
+      data: [makeOrder({ order_pickup_codes: { code: '0925' } })],
+      error: null,
+    }),
+  )
+
+  renderPage()
+
+  const card = within(await screen.findByText('Order #aaaaaaaa').then(() => cardFor('aaaaaaaa')))
+  expect(card.getByText('Pickup code')).toBeInTheDocument()
+  expect(card.getByText('0925')).toBeInTheDocument()
+  expect(card.getByText(/tell this to the canteen/i)).toBeInTheDocument()
+})
+
+test('shows no pickup code once an order is completed or cancelled, or when there is none', async () => {
+  supabase.from.mockReturnValue(
+    makeThenable({
+      data: [
+        { ...completed, order_pickup_codes: { code: '1111' } },
+        { ...cancelled, order_pickup_codes: { code: '2222' } },
+        { ...pending, order_pickup_codes: null },
+      ],
+      error: null,
+    }),
+  )
+
+  renderPage()
+
+  await screen.findByText('Order #aaaaaaaa')
+  expect(screen.queryByText('Pickup code')).not.toBeInTheDocument()
+  expect(screen.queryByText('1111')).not.toBeInTheDocument()
+  expect(screen.queryByText('2222')).not.toBeInTheDocument()
 })
 
 test('shows where each order is picked up', async () => {

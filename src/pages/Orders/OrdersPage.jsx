@@ -27,6 +27,8 @@ function formatPlaced(createdAt) {
 function OrderCard({ order, cancelling, cancelError, onCancel }) {
   const placed = formatPlaced(order.created_at)
   const label = STATUS_LABELS[order.status] ?? order.status
+  // Only the student who placed the order can read its code (row level security).
+  const pickupCode = isActive(order) ? order.order_pickup_codes?.code : null
 
   return (
     <li className="orders-card">
@@ -38,6 +40,14 @@ function OrderCard({ order, cancelling, cancelError, onCancel }) {
         </div>
         <span className={`orders-badge orders-badge-${order.status}`}>{label}</span>
       </div>
+
+      {pickupCode && (
+        <div className="pickup-code">
+          <span className="pickup-code-label">Pickup code</span>
+          <span className="pickup-code-value">{pickupCode}</span>
+          <span className="pickup-code-hint">Tell this to the canteen when you pick up your order.</span>
+        </div>
+      )}
 
       <ul className="orders-lines">
         {(order.order_items ?? []).map((line, index) => (
@@ -93,7 +103,7 @@ export default function OrdersPage() {
       try {
         const { data, error } = await supabase
           .from('orders')
-          .select('*, locations(name), order_items(quantity, unit_price, menu_items(name))')
+          .select('*, locations(name), order_pickup_codes(code), order_items(quantity, unit_price, menu_items(name))')
           .eq('user_id', userId)
           .order('created_at', { ascending: false })
         if (seq !== loadSeq.current) return
