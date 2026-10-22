@@ -9,11 +9,14 @@ export default function CanteenOrdersPage() {
   const { locations } = useLocations({ pollMs: 0 })
   const [locationFilter, setLocationFilter] = useState('all')
   const [authorized, setAuthorized] = useState(null)
+  const [role, setRole] = useState(null)
   const [connectionError, setConnectionError] = useState(false)
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [completingId, setCompletingId] = useState(null)
+  const [codes, setCodes] = useState({})
+  const [rowErrors, setRowErrors] = useState({})
 
   useEffect(() => {
     checkAccessAndLoad()
@@ -47,6 +50,7 @@ export default function CanteenOrdersPage() {
         return
       }
 
+      setRole(profile.role)
       setAuthorized(true)
       await loadOrders()
     } catch {
@@ -76,21 +80,45 @@ export default function CanteenOrdersPage() {
     }
   }
 
-  async function handleMarkPickedUp(orderId) {
+  const setRowError = (orderId, message) => setRowErrors((prev) => ({ ...prev, [orderId]: message }))
+
+  // The student's pickup code is what signs the order off. An admin can
+  // complete without one (code = null) when the student can't show it.
+  async function handleMarkPickedUp(orderId, code) {
     if (connectionError) return
     setError('')
+    setRowError(orderId, '')
     setCompletingId(orderId)
-    const { error: updateError } = await supabase
-      .from('orders')
-      .update({ status: 'completed' })
-      .eq('id', orderId)
-    setCompletingId(null)
-
-    if (updateError) {
-      setError(updateError.message)
-      return
+    try {
+      const { data, error: rpcError } = await supabase.rpc('complete_order', {
+        p_order_id: orderId,
+        p_code: code,
+      })
+      if (rpcError) {
+        setRowError(orderId, rpcError.message)
+        return
+      }
+      if (data?.result === 'wrong_code') {
+        const left = data.attempts_left
+        setRowError(orderId, `That code doesn't match. ${left} ${left === 1 ? 'try' : 'tries'} left.`)
+        setCodes((prev) => ({ ...prev, [orderId]: '' }))
+        return
+      }
+      if (data?.result === 'locked') {
+        setRowError(orderId, 'Too many wrong codes. Ask an admin to complete this order.')
+        return
+      }
+      setOrders((prev) => prev.filter((order) => order.id !== orderId))
+    } catch {
+      setRowError(orderId, "Can't reach Supabase right now. Please try again.")
+    } finally {
+      setCompletingId(null)
     }
-    setOrders((prev) => prev.filter((order) => order.id !== orderId))
+  }
+
+  function handleOverride(orderId) {
+    if (!window.confirm('Complete this order without the pickup code? This is recorded on the order.')) return
+    handleMarkPickedUp(orderId, null)
   }
 
   const visibleOrders =
@@ -179,15 +207,52 @@ export default function CanteenOrdersPage() {
                   <p className="canteen-item-meta">Note: {order.special_instructions}</p>
                 )}
               </div>
-              <div className="canteen-item-actions">
+              <form
+                className="canteen-item-actions pickup-code-form"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  handleMarkPickedUp(order.id, codes[order.id] ?? '')
+                }}
+              >
+                <label className="pickup-code-field">
+                  Pickup code
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    maxLength={4}
+                    pattern="[0-9]{4}"
+                    placeholder="0000"
+                    aria-label={`Pickup code for order ${order.id.slice(0, 8)}`}
+                    value={codes[order.id] ?? ''}
+                    onChange={(event) =>
+                      setCodes((prev) => ({ ...prev, [order.id]: event.target.value.replace(/\D/g, '') }))
+                    }
+                  />
+                </label>
                 <Button
+                  type="submit"
                   variant="gold"
-                  disabled={completingId === order.id}
-                  onClick={() => handleMarkPickedUp(order.id)}
+                  disabled={completingId === order.id || (codes[order.id] ?? '').length !== 4}
                 >
                   {completingId === order.id ? 'Marking...' : 'Mark Picked Up'}
                 </Button>
-              </div>
+                {role === 'admin' && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={completingId === order.id}
+                    onClick={() => handleOverride(order.id)}
+                  >
+                    Complete without code
+                  </Button>
+                )}
+                {rowErrors[order.id] && (
+                  <p className="auth-error pickup-code-error" role="alert">
+                    {rowErrors[order.id]}
+                  </p>
+                )}
+              </form>
             </div>
           ))}
         </div>

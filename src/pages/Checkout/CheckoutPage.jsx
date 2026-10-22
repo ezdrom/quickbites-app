@@ -122,6 +122,7 @@ export default function CheckoutPage() {
           Your order has been placed for ₱{confirmedOrder.total_amount}. Status: {confirmedOrder.status}.
         </p>
         <p className="auth-status">Pick it up at {confirmedLocation}.</p>
+        <p className="auth-status">Your pickup code is under My Orders. Tell it to the canteen when you collect.</p>
         <Link to="/orders" className="auth-inline-link">
           Track your order
         </Link>

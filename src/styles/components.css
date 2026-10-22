@@ -1263,3 +1263,95 @@
     gap: 6px;
   }
 }
+
+/* Pickup code: shown to the student, typed in by staff */
+.pickup-code {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: 12px 0 4px;
+  padding: 10px 14px;
+  border: 1px dashed var(--qb-gold-hover);
+  border-radius: var(--qb-radius-md);
+  background: #FFF8E6;
+}
+
+.pickup-code-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--qb-text-heading);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pickup-code-value {
+  font-family: var(--qb-font-heading);
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: var(--qb-green-dark);
+}
+
+.pickup-code-hint {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+  color: var(--qb-text-body);
+}
+
+.pickup-code-form {
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: flex-end;
+  max-width: 340px;
+}
+
+.pickup-code-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--qb-text-heading);
+}
+
+.pickup-code-field input {
+  width: 110px;
+  padding: 8px 12px;
+  border: 1px solid var(--qb-border-color);
+  border-radius: var(--qb-radius-sm);
+  background: var(--qb-card-bg);
+  font-size: 1.1rem;
+  letter-spacing: 0.2em;
+  text-align: center;
+}
+
+.pickup-code-error {
+  flex-basis: 100%;
+  margin: 0;
+  text-align: right;
+}
+
+@media (max-width: 600px) {
+  .pickup-code-form {
+    max-width: none;
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .pickup-code-field {
+    flex: 1 1 100%;
+  }
+
+  .pickup-code-field input {
+    width: 100%;
+  }
+
+  .pickup-code-form .btn {
+    flex: 1 1 100%;
+  }
+
+  .pickup-code-error {
+    text-align: left;
+  }
+}

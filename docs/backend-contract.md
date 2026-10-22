@@ -152,6 +152,43 @@ The location is required. It is checked and locked inside the same transaction a
 
 Orders already placed are unaffected by a location closing, and staff can keep fulfilling them. Stock errors are unchanged.
 
+## Pickup codes (student sign-off)
+
+Migration `20261022000000_order_pickup_codes.sql`. Every order gets a random 4-digit code when it is placed. Only the student who placed the order can read it; staff mark the order picked up by typing the code the student tells them. Orders that were waiting when this shipped were given codes.
+
+The code lives in `order_pickup_codes` (not on `orders`) because staff can read every `orders` row. The table has a SELECT policy for the order's owner only, so staff and admins cannot read it, and no write policies. Read it with an embed:
+
+```js
+const { data } = await supabase.from('orders').select('*, order_pickup_codes(code)').eq('user_id', userId)
+// order.order_pickup_codes?.code  ->  '0925' (null once the order is completed)
+```
+
+`orders` also gained `picked_up_at`, `picked_up_by` and `pickup_code_overridden`.
+
+### `complete_order(p_order_id uuid, p_code text default null) returns jsonb`
+
+```js
+const { data, error } = await supabase.rpc('complete_order', { p_order_id: id, p_code: '0925' })
+// data.result: 'ok' | 'wrong_code' | 'locked'
+```
+
+- Who: `canteen` and `admin`. Orders in `pending`, `preparing` or `ready` can be completed.
+- `{ result: 'ok', order }`: the order is now `completed`; who and when are recorded and the code is deleted.
+- `{ result: 'wrong_code', attempts_left }`: nothing changes except the attempt count. These are returned, not raised, so the count survives. Surrounding spaces in the code are ignored.
+- `{ result: 'locked' }`: five wrong codes locks the order against further code attempts, even the right one. An admin can still complete it with no code.
+- `p_code = null` is an **admin override** for a student who cannot show a code. It is recorded as `pickup_code_overridden = true`. For canteen staff, a null code is an error.
+
+| message | code | when |
+|---|---|---|
+| `Only canteen staff or admins can complete an order` | 42501 | any other signed-in user |
+| `p_order_id is required` | 22023 | `null` |
+| `order not found` | P0002 | no such order |
+| `order cannot be completed: status is <status>` | 55000 | already completed or cancelled |
+| `Enter the pickup code` | 22023 | `p_code` is null and the caller is not an admin |
+| `This order has no pickup code. An admin can complete it without one.` | 55000 | no code row exists |
+
+**Staff can no longer update `orders` directly.** The "Canteen and admins can update order status" policy was dropped, because a direct `update({ status: 'completed' })` would skip the code. Use `complete_order` to finish an order and `cancel_order` to cancel one.
+
 ## Helpers (rarely needed from the client)
 
 - `is_admin()` and `is_canteen_or_admin()` return a boolean for the current user. They are handy for route guards: `supabase.rpc('is_admin')`.

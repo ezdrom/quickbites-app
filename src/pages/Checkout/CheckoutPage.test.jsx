@@ -79,6 +79,7 @@ test('places an order at the default location and shows where to pick it up', as
     p_location_id: 'loc-main',
   })
   expect(screen.getByText('Pick it up at Main.')).toBeInTheDocument()
+  expect(screen.getByText(/your pickup code is under my orders/i)).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Track your order' })).toHaveAttribute('href', '/orders')
   expect(screen.getByRole('link', { name: 'Back to menu' })).toHaveAttribute('href', '/menu')
   expect(mockUseCart.clearCart).toHaveBeenCalled()
