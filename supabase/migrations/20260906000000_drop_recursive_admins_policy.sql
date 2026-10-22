@@ -1,0 +1,21 @@
+-- Fixes the real, confirmed source of the recurring 42P17 infinite
+-- recursion: a policy named "Admins have full access" was still present on
+-- public.profiles (visible via `SELECT * FROM pg_policies WHERE tablename =
+-- 'profiles'`), with qual:
+--
+--   EXISTS (SELECT 1 FROM profiles profiles_1
+--           WHERE profiles_1.id = auth.uid() AND profiles_1.role = 'admin')
+--
+-- That's a raw inline subquery against profiles, not wrapped in any
+-- RLS-bypassing function -- querying profiles re-triggers profiles' own RLS,
+-- which re-evaluates this same policy, forever. base_schema.sql's
+-- `DROP POLICY IF EXISTS "Admins have full access"` was meant to remove
+-- exactly this (it looks like the starter template's original policy), but
+-- it was somehow still present. The earlier fix to is_admin_or_staff()
+-- (20260905000000) was correct but irrelevant to this policy, which is why
+-- the recursion persisted even after that migration applied cleanly.
+--
+-- We already have equivalent, non-recursive coverage via "Admins and Staff
+-- have full access" (USING public.is_admin_or_staff(), which bypasses RLS
+-- for its internal query). This one is just redundant and broken.
+DROP POLICY IF EXISTS "Admins have full access" ON public.profiles;

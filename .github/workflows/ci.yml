@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # package-lock.json was generated on Windows and lacks the Linux rollup
+      # binary (npm optional-dependency bug), so install the matching one.
+      - name: Install Linux rollup binary
+        run: npm install --no-save --no-package-lock @rollup/rollup-linux-x64-gnu@$(node -p "require('rollup/package.json').version")
+
+      - name: Unit tests
+        run: npm test -- --ci
+
+      # Placeholder values: the build only needs the vars to exist, and the app
+      # falls back gracefully when Supabase is unreachable.
+      - name: Production build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: placeholder-key

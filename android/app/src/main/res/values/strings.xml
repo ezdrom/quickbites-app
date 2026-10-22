@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">QuickBites</string>
+    <string name="title_activity_main">QuickBites</string>
+    <string name="package_name">com.jrcc.quickbites</string>
+    <string name="custom_url_scheme">com.jrcc.quickbites</string>
+</resources>
