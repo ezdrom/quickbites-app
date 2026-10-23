@@ -25,6 +25,7 @@ Settings -> Environments:
 
 - `qa`: deployment branches = `develop`. Secrets `SUPABASE_PROJECT_ID` (QA ref) and `SUPABASE_DB_PASSWORD` (QA).
 - `production`: deployment branches = `main`, **required reviewers** = you. Secrets `SUPABASE_PROJECT_ID` (PRD ref) and `SUPABASE_DB_PASSWORD` (PRD).
+- `production-backup`: deployment branches = `main`, **no** required reviewers. Secrets `SUPABASE_PROJECT_ID`, `SUPABASE_DB_PASSWORD` (PRD) and `BACKUP_AGE_PUBLIC_KEY`. Used by the nightly backup (see runbook.md section 5).
 
 Settings -> Secrets -> Actions: repository secret `SUPABASE_ACCESS_TOKEN`
 (create at supabase.com/dashboard/account/tokens).
@@ -67,3 +68,5 @@ npx supabase db push --include-all
 Feature branch -> PR into `develop` (the fresh-database migration test runs) -> merge -> QA migrates
 automatically -> test -> PR `develop` into `main` -> approve the production deploy.
 Never `supabase db push` to PRD from a laptop. Migrations are append-only: add a new file instead of editing an applied one.
+
+Backups, restores, routine checks, troubleshooting and the handover checklist are in [runbook.md](runbook.md).
