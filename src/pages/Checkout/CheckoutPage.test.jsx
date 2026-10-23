@@ -62,6 +62,15 @@ test('lets the student choose a pickup location and starts on the first open one
   expect(screen.getByRole('radio', { name: /annex/i })).not.toBeChecked()
 })
 
+test('says an order is picked up at one location only', async () => {
+  routeTables(supabase, { menu_items: menuResult, locations: locationsResult() })
+
+  renderPage()
+
+  expect(await screen.findByText(/whole order is picked up at one location/i)).toBeInTheDocument()
+  expect(screen.getByText(/place two separate orders/i)).toBeInTheDocument()
+})
+
 test('places an order at the default location and shows where to pick it up', async () => {
   routeTables(supabase, { menu_items: menuResult, locations: locationsResult() })
   supabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'u1' } }, error: null })
@@ -80,6 +89,7 @@ test('places an order at the default location and shows where to pick it up', as
   })
   expect(screen.getByText('Pick it up at Main.')).toBeInTheDocument()
   expect(screen.getByText(/your pickup code is under my orders/i)).toBeInTheDocument()
+  expect(screen.getByText(/no time limit, so collect any time before the canteen closes/i)).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Track your order' })).toHaveAttribute('href', '/orders')
   expect(screen.getByRole('link', { name: 'Back to menu' })).toHaveAttribute('href', '/menu')
   expect(mockUseCart.clearCart).toHaveBeenCalled()

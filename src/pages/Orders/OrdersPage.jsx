@@ -45,7 +45,10 @@ function OrderCard({ order, cancelling, cancelError, onCancel }) {
         <div className="pickup-code">
           <span className="pickup-code-label">Pickup code</span>
           <span className="pickup-code-value">{pickupCode}</span>
-          <span className="pickup-code-hint">Tell this to the canteen when you pick up your order.</span>
+          <span className="pickup-code-hint">
+            Tell this to the canteen when you pick up your order. The code has no time limit: use it any time
+            before the canteen closes.
+          </span>
         </div>
       )}
 
