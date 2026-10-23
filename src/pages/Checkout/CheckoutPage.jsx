@@ -122,7 +122,10 @@ export default function CheckoutPage() {
           Your order has been placed for ₱{confirmedOrder.total_amount}. Status: {confirmedOrder.status}.
         </p>
         <p className="auth-status">Pick it up at {confirmedLocation}.</p>
-        <p className="auth-status">Your pickup code is under My Orders. Tell it to the canteen when you collect.</p>
+        <p className="auth-status">
+          Your pickup code is under My Orders. Tell it to the canteen when you collect. It has no time limit, so
+          collect any time before the canteen closes.
+        </p>
         <Link to="/orders" className="auth-inline-link">
           Track your order
         </Link>
@@ -158,6 +161,12 @@ export default function CheckoutPage() {
         failed={pickup.failed}
         onRetry={pickup.refresh}
       />
+
+      {selected && (
+        <p className="canteen-item-meta location-note">
+          Your whole order is picked up at one location. To order from both, place two separate orders.
+        </p>
+      )}
 
       {orderingClosed && (
         <CanteenClosedNotice
