@@ -106,6 +106,7 @@ test('shows the pickup code on orders that are still waiting, with what to do wi
   expect(card.getByText('Pickup code')).toBeInTheDocument()
   expect(card.getByText('0925')).toBeInTheDocument()
   expect(card.getByText(/tell this to the canteen/i)).toBeInTheDocument()
+  expect(card.getByText(/no time limit.*before the canteen closes/i)).toBeInTheDocument()
 })
 
 test('shows no pickup code once an order is completed or cancelled, or when there is none', async () => {

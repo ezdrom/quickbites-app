@@ -1264,6 +1264,10 @@
   }
 }
 
+.location-note {
+  margin: -4px 0 12px;
+}
+
 /* Pickup code: shown to the student, typed in by staff */
 .pickup-code {
   display: flex;
