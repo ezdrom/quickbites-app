@@ -1,0 +1,107 @@
+name: Database backup
+
+# Nightly encrypted dump of the PRODUCTION database.
+#
+# Why: Supabase free projects have no automatic backups, so without this one bad
+# migration or deletion is unrecoverable. Restore steps: docs/runbook.md.
+#
+# This repository is PUBLIC and anyone signed in to GitHub can download a public
+# repository's artifacts, so the dump is encrypted with `age` before it is
+# uploaded. Only the holder of the private key can read it. The job fails if no
+# public key is configured; it never uploads a plaintext dump.
+#
+# Uses its own GitHub environment, `production-backup`, with NO required
+# reviewers. The `production` environment pauses for approval, which would stall
+# a scheduled job. Settings -> Environments -> production-backup:
+#   deployment branches = main
+#   secrets: SUPABASE_PROJECT_ID (PRD ref), SUPABASE_DB_PASSWORD (PRD),
+#            BACKUP_AGE_PUBLIC_KEY (the "age1..." line from age-keygen)
+# SUPABASE_ACCESS_TOKEN is the existing repository secret.
+#
+# Scheduled workflows only run from the default branch (main), and GitHub turns
+# them off after 60 days without repository activity. Run it once by hand
+# (Actions -> Database backup -> Run workflow) after setup to prove it works.
+
+on:
+  schedule:
+    - cron: '0 18 * * *' # 02:00 Asia/Manila
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production-backup
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      BACKUP_AGE_PUBLIC_KEY: ${{ secrets.BACKUP_AGE_PUBLIC_KEY }}
+    steps:
+      - name: Require an encryption key
+        run: |
+          if [ -z "$BACKUP_AGE_PUBLIC_KEY" ]; then
+            echo "::error::BACKUP_AGE_PUBLIC_KEY is not set. Refusing to make an unencrypted backup of a public repo's artifacts."
+            exit 1
+          fi
+          case "$BACKUP_AGE_PUBLIC_KEY" in
+            age1*) ;;
+            *) echo "::error::BACKUP_AGE_PUBLIC_KEY must be a public key starting with age1 (never the private AGE-SECRET-KEY)."; exit 1 ;;
+          esac
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install age
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq age
+
+      - name: Link production project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Dump roles, schema and data
+        run: |
+          mkdir dump
+          supabase db dump --linked -f dump/roles.sql --role-only
+          supabase db dump --linked -f dump/schema.sql
+          supabase db dump --linked -f dump/data.sql --data-only --use-copy
+          # Accounts (emails, password hashes) live in the auth schema, which the
+          # default dump leaves out. Without this a restore has no users.
+          supabase db dump --linked -f dump/auth-data.sql --data-only --use-copy --schema auth
+
+      - name: Sanity check the dump
+        run: |
+          for f in roles schema data auth-data; do
+            test -s "dump/$f.sql" || { echo "::error::dump/$f.sql is empty"; exit 1; }
+          done
+          grep -Eq '"?public"?."?orders"?' dump/schema.sql || { echo "::error::schema.sql has no orders table"; exit 1; }
+          grep -Eq '"?auth"?."?users"?' dump/auth-data.sql || { echo "::error::auth-data.sql has no auth.users"; exit 1; }
+
+      - name: Compress and encrypt
+        run: |
+          name="quickbites-prd-$(date -u +%Y%m%d-%H%M)"
+          tar -czf "$name.tar.gz" -C dump .
+          age -r "$BACKUP_AGE_PUBLIC_KEY" -o "$name.tar.gz.age" "$name.tar.gz"
+          shred -u "$name.tar.gz" || rm -f "$name.tar.gz"
+          rm -rf dump
+          ls -l ./*.age
+          echo "BACKUP_FILE=$name.tar.gz.age" >> "$GITHUB_ENV"
+
+      - name: Upload encrypted backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.BACKUP_FILE }}
+          path: ${{ env.BACKUP_FILE }}
+          retention-days: 30
+          if-no-files-found: error
