@@ -1359,3 +1359,156 @@
     text-align: left;
   }
 }
+
+/* ---------- Canteen: tablet-friendly sizing, toggle, toast, empty states ---------- */
+.canteen-page {
+  max-width: 880px;
+}
+
+.canteen-page .btn {
+  min-height: 52px;
+  font-size: 1.05rem;
+}
+
+.canteen-page .canteen-item-actions .btn,
+.canteen-order-actions .btn {
+  width: auto;
+  padding: 12px 22px;
+}
+
+.canteen-item-name {
+  font-size: 1.15rem;
+}
+
+.canteen-item-meta,
+.canteen-order-lines {
+  font-size: 0.95rem;
+}
+
+.canteen-page .auth-error,
+.canteen-page .auth-status {
+  font-size: 0.95rem;
+}
+
+.canteen-page .orders-badge {
+  display: inline-block;
+  vertical-align: middle;
+  font-size: 0.85rem;
+}
+
+.canteen-order-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.canteen-order-actions > .btn {
+  min-width: 200px;
+  min-height: 60px;
+  font-size: 1.2rem;
+}
+
+.pickup-code-field input {
+  min-height: 52px;
+  font-size: 1.3rem;
+  letter-spacing: 0.2em;
+}
+
+.availability-toggle {
+  min-width: 132px;
+  min-height: 52px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  border: 2px solid #B3261E;
+  background: #FDECEA;
+  color: #B3261E;
+  font-size: 1.05rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.availability-toggle-on {
+  border-color: var(--qb-badge-available);
+  background: var(--qb-badge-available);
+  color: #fff;
+}
+
+.availability-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.saved-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  z-index: 50;
+  margin: 0;
+  padding: 14px 28px;
+  border-radius: 999px;
+  background: var(--qb-green-dark);
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+.canteen-empty {
+  background: var(--qb-card-bg);
+  border: 1px dashed var(--qb-border-color);
+  border-radius: var(--qb-radius-md);
+  padding: 32px 20px;
+  text-align: center;
+  color: var(--qb-text-body);
+  font-size: 1.05rem;
+}
+
+.canteen-empty .auth-error {
+  margin: 0 0 16px;
+}
+
+.canteen-empty .btn {
+  width: auto;
+  margin: 0 auto;
+}
+
+.canteen-empty-title {
+  margin: 0 0 6px;
+  font-family: var(--qb-font-heading);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--qb-text-heading);
+}
+
+.canteen-empty-hint {
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .canteen-order-actions {
+    align-items: stretch;
+  }
+
+  .canteen-page .canteen-item-actions {
+    flex-wrap: wrap;
+  }
+
+  .canteen-order-actions > .btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Edit + Delete share a row under the full-width toggle. */
+  .canteen-page .canteen-item-actions .btn {
+    flex: 1 1 40%;
+    min-width: 0;
+  }
+
+  .availability-toggle {
+    flex: 1 1 100%;
+  }
+}

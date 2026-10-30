@@ -189,6 +189,37 @@ const { data, error } = await supabase.rpc('complete_order', { p_order_id: id, p
 
 **Staff can no longer update `orders` directly.** The "Canteen and admins can update order status" policy was dropped, because a direct `update({ status: 'completed' })` would skip the code. Use `complete_order` to finish an order and `cancel_order` to cancel one.
 
+## Kitchen steps and sold-out items
+
+### `advance_order_status(p_order_id uuid, p_status text) returns orders`
+
+Migration `20261030000001_advance_order_status.sql`. The canteen dashboard's Accept and Mark Ready buttons.
+
+```js
+const { data: order, error } = await supabase.rpc('advance_order_status', { p_order_id: id, p_status: 'preparing' })
+```
+
+- Who: `canteen` and `admin`. Only one step forward: `pending` -> `preparing`, `preparing` -> `ready`. Picking up stays with `complete_order`, cancelling with `cancel_order`.
+
+| message | code | when |
+|---|---|---|
+| `Only canteen staff or admins can update an order` | 42501 | any other caller |
+| `p_status must be preparing or ready` | 22023 | any other status |
+| `order not found` | P0002 | no such order |
+| `order cannot move to <status>: status is <status>` | 55000 | not at the step before (already moved, cancelled or completed) |
+
+### Sold out
+
+Migration `20261030000000_menu_item_sold_out_toggle.sql`. Staff mark an item sold out or available with a plain update, which now sticks:
+
+```js
+await supabase.from('menu_items').update({ is_available: false }).eq('id', id).select().single()
+```
+
+- `serving_count = 0` always forces `is_available = false`; restocking from 0 makes the item available again.
+- Otherwise `is_available` is whatever staff last chose; orders and edits that change `serving_count` keep it.
+- `place_order` rejects a sold-out item with the usual `Not enough servings available for item <id>` error, even if servings remain.
+
 ## Helpers (rarely needed from the client)
 
 - `is_admin()` and `is_canteen_or_admin()` return a boolean for the current user. They are handy for route guards: `supabase.rpc('is_admin')`.
