@@ -62,7 +62,8 @@ test('shows a connection error instead of hanging when supabase is unreachable',
 
   renderPage()
 
-  expect(await screen.findByText(/can't reach supabase/i)).toBeInTheDocument()
+  expect(await screen.findByText(/can't reach the server/i)).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument()
 })
 
 function mockStaffWithOrders(orders) {

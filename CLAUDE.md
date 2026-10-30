@@ -11,7 +11,7 @@ Campus food ordering and pickup app for JRCC. Students browse the menu, order, a
 - `src/pages/<Area>/` one folder per page (Login, RegisterUser, ForgotPassword, ResetPassword, Menu, Checkout, Canteen). `src/components/` shared UI. `src/context/CartContext.jsx` cart state.
 - Auth pages style with `src/styles/login.css` (+ inline styles). Other pages use `src/styles/components.css` and the tokens in `theme.css`. Keep the existing green/cream/gold look.
 - Routes are all in `src/routes/AppRoutes.jsx`.
-- Roles: `student`, `canteen`, `admin` (stored in `profiles.role`). Login sends canteen users to `/canteen-orders`, everyone else to `/menu`.
+- Roles: `student`, `canteen`, `admin` (stored in `profiles.role`). Login sends canteen users to `/canteen-orders`, everyone else to `/menu`. A signed-in canteen user opening `/` or `/login` also lands on `/canteen-orders` (`CanteenHomeRedirect`). Canteen pages confirm saves with `SavedToast` ("Saved ✓"); saving a menu item returns to `/canteen-orders` with `state: { flash }`.
 
 ## Supabase rules (learned the hard way)
 - Migrations in `supabase/migrations/` named `YYYYMMDDHHMMSS_description.sql`. Never edit an applied migration; add a new one.

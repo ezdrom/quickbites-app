@@ -28,3 +28,23 @@ export default function RequireAuth({ roles }) {
 
   return <Outlet />
 }
+
+// Wraps a public page (/, /login). A signed-in canteen user goes straight to
+// their dashboard instead. `waitForAuth` holds the redirect until auth resolves.
+export function CanteenHomeRedirect({ waitForAuth = false, children }) {
+  const { role, loading } = useAuth()
+
+  if (isDemoMode) return children
+
+  if (loading && waitForAuth) {
+    return (
+      <div className="auth-loading" role="status">
+        Loading...
+      </div>
+    )
+  }
+
+  if (role === 'canteen') return <Navigate to={homeForRole(role)} replace />
+
+  return children
+}

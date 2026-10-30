@@ -9,15 +9,29 @@ import CanteenOrdersPage from '../pages/Canteen/CanteenOrdersPage.jsx'
 import CheckoutPage from '../pages/Checkout/CheckoutPage.jsx'
 import AdminDashboardPage from '../pages/Admin/AdminDashboardPage.jsx'
 import OrdersPage from '../pages/Orders/OrdersPage.jsx'
-import RequireAuth from '../components/RequireAuth.jsx'
+import RequireAuth, { CanteenHomeRedirect } from '../components/RequireAuth.jsx'
 import AppLayout from '../components/AppLayout.jsx'
 
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Public routes (outside the guard) */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="/login" element={<LoginPage />} />
+      {/* Public routes (outside the guard). Signed-in canteen staff skip to their dashboard. */}
+      <Route
+        path="/"
+        element={
+          <CanteenHomeRedirect waitForAuth>
+            <Navigate to="/login" replace />
+          </CanteenHomeRedirect>
+        }
+      />
+      <Route
+        path="/login"
+        element={
+          <CanteenHomeRedirect>
+            <LoginPage />
+          </CanteenHomeRedirect>
+        }
+      />
       <Route path="/register" element={<RegisterUserPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
-import { MemoryRouter, Routes, Route } from 'react-router-dom'
-import RequireAuth from './RequireAuth.jsx'
+import { MemoryRouter, Navigate, Routes, Route } from 'react-router-dom'
+import RequireAuth, { CanteenHomeRedirect } from './RequireAuth.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { isDemoMode } from '../lib/env.js'
 
@@ -78,4 +78,57 @@ test('demo mode lets everyone through', () => {
   useAuth.mockReturnValue({ user: null, role: null, loading: false })
   renderAt('/secret', ['admin'])
   expect(screen.getByText('secret page')).toBeInTheDocument()
+})
+
+describe('CanteenHomeRedirect', () => {
+  function renderPublic(path) {
+    render(
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <CanteenHomeRedirect waitForAuth>
+                <Navigate to="/login" replace />
+              </CanteenHomeRedirect>
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              <CanteenHomeRedirect>
+                <div>login page</div>
+              </CanteenHomeRedirect>
+            }
+          />
+          <Route path="/canteen-orders" element={<div>orders page</div>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+  }
+
+  test.each(['/', '/login'])('sends a signed-in canteen user from %s to the dashboard', (path) => {
+    useAuth.mockReturnValue({ user: { id: 'u1' }, role: 'canteen', loading: false })
+    renderPublic(path)
+    expect(screen.getByText('orders page')).toBeInTheDocument()
+  })
+
+  test.each(['student', 'admin'])('leaves the login page alone for a signed-in %s', (role) => {
+    useAuth.mockReturnValue({ user: { id: 'u1' }, role, loading: false })
+    renderPublic('/')
+    expect(screen.getByText('login page')).toBeInTheDocument()
+  })
+
+  test('shows the login page to visitors who are not signed in', () => {
+    useAuth.mockReturnValue({ user: null, role: null, loading: false })
+    renderPublic('/')
+    expect(screen.getByText('login page')).toBeInTheDocument()
+  })
+
+  test('waits for auth on / instead of flashing the login page', () => {
+    useAuth.mockReturnValue({ user: null, role: null, loading: true })
+    renderPublic('/')
+    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.queryByText('login page')).not.toBeInTheDocument()
+  })
 })

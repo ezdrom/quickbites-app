@@ -1,14 +1,19 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import FormField from '../../components/FormField.jsx'
 import Button from '../../components/Button.jsx'
 import CanteenStatusControl from '../../components/CanteenStatusControl.jsx'
+import SavedToast, { newFlash } from '../../components/SavedToast.jsx'
 import { supabase } from '../../lib/supabaseClient.js'
 import LoadError from '../../components/LoadError.jsx'
 import { placeholderMenuItems } from '../../data/placeholderMenuItems.js'
 import { allowPlaceholderData } from '../../lib/env.js'
 
 const emptyForm = { name: '', description: '', price: '', servingCount: '' }
+
+// Where staff land after saving, with a short confirmation.
+const DASHBOARD = '/canteen-orders'
+const SAVED_STATE = { state: { flash: 'Saved ✓' } }
 
 function toRow(item) {
   return {
@@ -22,6 +27,7 @@ function toRow(item) {
 }
 
 export default function CanteenMenuPage() {
+  const navigate = useNavigate()
   const [authorized, setAuthorized] = useState(null)
   const [demoMode, setDemoMode] = useState(false)
   const [loadError, setLoadError] = useState(false)
@@ -32,6 +38,9 @@ export default function CanteenMenuPage() {
   const [submitting, setSubmitting] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState(emptyForm)
+  const [togglingId, setTogglingId] = useState(null)
+  const [flash, setFlash] = useState(null)
+  const clearFlash = useCallback(() => setFlash(null), [])
 
   useEffect(() => {
     checkAccessAndLoad()
@@ -126,8 +135,7 @@ export default function CanteenMenuPage() {
 
       if (insertError) throw insertError
 
-      setForm(emptyForm)
-      await loadItems()
+      navigate(DASHBOARD, SAVED_STATE)
     } catch (e) {
       setError(e.message ?? "Can't reach Supabase right now. Please try again.")
     } finally {
@@ -166,10 +174,35 @@ export default function CanteenMenuPage() {
 
       if (updateError) throw updateError
 
-      cancelEdit()
-      await loadItems()
+      navigate(DASHBOARD, SAVED_STATE)
     } catch (e) {
       setError(e.message ?? "Can't reach Supabase right now. Please try again.")
+    }
+  }
+
+  // One tap: sold out <-> available. Stays on the list so staff can flip several.
+  // The database keeps an item with 0 servings sold out, so use the row it returns.
+  async function handleToggleAvailable(item) {
+    if (demoMode || loadError) return
+    setError('')
+    setTogglingId(item.id)
+    try {
+      const { data, error: updateError } = await supabase
+        .from('menu_items')
+        .update({ is_available: !item.is_available })
+        .eq('id', item.id)
+        .select()
+        .single()
+
+      if (updateError) throw updateError
+
+      const isAvailable = typeof data?.is_available === 'boolean' ? data.is_available : !item.is_available
+      setItems((prev) => prev.map((row) => (row.id === item.id ? { ...row, is_available: isAvailable } : row)))
+      setFlash(newFlash('Saved ✓'))
+    } catch (e) {
+      setError(e.message ?? "Can't reach Supabase right now. Please try again.")
+    } finally {
+      setTogglingId(null)
     }
   }
 
@@ -226,6 +259,8 @@ export default function CanteenMenuPage() {
         </Link>
       </div>
 
+      <SavedToast flash={flash} onDone={clearFlash} />
+
       <CanteenStatusControl />
 
       {demoMode && (
@@ -280,11 +315,18 @@ export default function CanteenMenuPage() {
 
       <div className="canteen-list">
         {loading ? (
-          <p className="auth-status">Loading items...</p>
+          <p className="canteen-empty" role="status">
+            Loading menu...
+          </p>
         ) : loadError ? (
-          <LoadError onRetry={loadItems} />
+          <div className="canteen-empty">
+            <LoadError onRetry={loadItems} />
+          </div>
         ) : items.length === 0 ? (
-          <p className="auth-status">No menu items yet.</p>
+          <div className="canteen-empty">
+            <p className="canteen-empty-title">No menu items yet</p>
+            <p className="canteen-empty-hint">Add your first dish with the form above.</p>
+          </div>
         ) : (
           items.map((item) =>
             editingId === item.id ? (
@@ -332,11 +374,26 @@ export default function CanteenMenuPage() {
                 <div className="canteen-item-info">
                   <p className="canteen-item-name">{item.name}</p>
                   <p className="canteen-item-meta">
-                    ₱{item.price} · {item.serving_count} servings ·{' '}
-                    {item.is_available ? 'Available' : 'Sold out'}
+                    ₱{item.price} · {item.serving_count} servings
                   </p>
+                  {item.serving_count <= 0 && (
+                    <p className="canteen-item-meta">Add servings (Edit) to sell this again.</p>
+                  )}
                 </div>
                 <div className="canteen-item-actions">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={item.is_available}
+                    aria-label={`${item.name} available`}
+                    className={`availability-toggle${item.is_available ? ' availability-toggle-on' : ''}`}
+                    onClick={() => handleToggleAvailable(item)}
+                    disabled={
+                      formDisabled || togglingId === item.id || (!item.is_available && item.serving_count <= 0)
+                    }
+                  >
+                    {item.is_available ? 'Available' : 'Sold out'}
+                  </button>
                   <Button variant="outline" onClick={() => startEdit(item)} disabled={formDisabled}>
                     Edit
                   </Button>
