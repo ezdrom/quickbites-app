@@ -2,29 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Order food from the JRCC canteen and pick it up.">
+  <meta name="theme-color" content="#2E7D4F">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="icon" type="image/png" href="/pwa-192x192.png">
+  <link rel="apple-touch-icon" href="/pwa-192x192.png">
   <title>QuickBites - Campus Eats</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 10px; }
-    .card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
-    button { background-color: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
-    button:hover { background-color: #218838; }
-  </style>
 </head>
 <body>
-  <h1>🍔 QuickBites Starter App</h1>
-  <p>Welcome! Choose an option below:</p>
-
-  <div class="card">
-    <h3>📱 Student Ordering</h3>
-    <p>Browse today's menu and order food for pick-up.</p>
-    <button onclick="alert('Student Order Flow Coming Soon!')">Go to Student Menu</button>
-  </div>
-
-  <div class="card">
-    <h3>🏪 Merchant Inventory</h3>
-    <p>Add new food items and manage student pick-up orders.</p>
-    <button onclick="alert('Merchant Portal Coming Soon!')">Go to Merchant Dashboard</button>
-  </div>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

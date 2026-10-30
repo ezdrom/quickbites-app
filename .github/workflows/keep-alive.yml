@@ -1,0 +1,49 @@
+name: Keep Supabase production awake
+
+# Free Supabase projects are paused after a week without enough database
+# activity, and a paused production database means students can't log in or
+# order. Make a few cheap read requests every day to prevent that.
+#
+# Scheduled workflows only run from the default branch (main), and GitHub
+# disables them in a public repo after 60 days without repository activity, so
+# a commit now and then keeps this running.
+#
+# Needs: Actions variable PRD_SUPABASE_URL and secret PRD_SUPABASE_PUBLISHABLE_KEY
+# (repository level, not the "production" environment, which waits for approval).
+
+on:
+  schedule:
+    - cron: '17 */8 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Query the production project
+        env:
+          SUPABASE_URL: ${{ vars.PRD_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.PRD_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ]; then
+            echo "::error::Set the PRD_SUPABASE_URL variable and the PRD_SUPABASE_PUBLISHABLE_KEY secret."
+            exit 1
+          fi
+
+          failed=0
+          for path in "canteen_settings?select=is_open&limit=1" "menu_items?select=id&limit=1"; do
+            table="${path%%\?*}"
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 \
+              -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY" \
+              "$SUPABASE_URL/rest/v1/$path") || code="000"
+            echo "GET /rest/v1/$table -> $code"
+            case "$code" in
+              200) ;;
+              404) echo "::warning::$table was not found. Has the production schema been deployed yet?" ;;
+              *) failed=1 ;;
+            esac
+          done
+          exit "$failed"

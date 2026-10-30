@@ -1,0 +1,24 @@
+/* QuickBites design tokens.
+   Values below are approximations read off Figma screenshots, not exported specs.
+   Swap these for real values once the Figma file/asset exports are available. */
+:root {
+  --qb-green-dark: #1F5C3F;
+  --qb-green-mid: #2F7A52;
+  --qb-green-accent: #2E7D4F;
+  --qb-cream: #FBF3E3;
+  --qb-gold: #F4B740;
+  --qb-gold-hover: #E0A62E;
+  --qb-text-heading: #1A1A1A;
+  --qb-text-body: #4A4A4A;
+  --qb-badge-available: #3FA35E;
+  --qb-badge-unavailable: #B0B0B0;
+  --qb-card-bg: #FFFFFF;
+  --qb-border-color: #E4D9BF;
+
+  --qb-radius-lg: 24px;
+  --qb-radius-md: 12px;
+  --qb-radius-sm: 8px;
+
+  --qb-font-heading: 'Baloo 2', 'Arial Rounded MT Bold', 'Segoe UI', sans-serif;
+  --qb-font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}

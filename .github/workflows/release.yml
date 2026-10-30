@@ -1,0 +1,71 @@
+name: Release APK
+
+# Builds a debug APK on every merge to main and attaches it to a GitHub Release.
+# Requires repo secrets VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY so
+# the APK is built against the real project instead of the placeholder one.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - run: npm ci
+
+      # package-lock.json was generated on Windows and lacks the Linux rollup
+      # binary (npm optional-dependency bug), so install the matching one.
+      - name: Install Linux rollup binary
+        run: npm install --no-save --no-package-lock @rollup/rollup-linux-x64-gnu@$(node -p "require('rollup/package.json').version")
+
+      - name: Test
+        run: npm test -- --ci
+
+      - name: Build web app and sync into the Android project
+        run: |
+          npm run build
+          npx cap sync android
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+
+      - name: Assemble debug APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk quickbites-${{ github.run_number }}.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: quickbites-apk
+          path: quickbites-${{ github.run_number }}.apk
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: QuickBites build ${{ github.run_number }}
+          prerelease: true
+          generate_release_notes: true
+          files: quickbites-${{ github.run_number }}.apk

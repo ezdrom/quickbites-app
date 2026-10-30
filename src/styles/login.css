@@ -1,0 +1,548 @@
+@import url('https://fonts.googleapis.com/css2?family=Righteous&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background: #0d6200;
+  overflow: hidden;
+}
+
+/* MAIN PAGE */
+.login-page {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 600px;
+  background-color: #0d6200;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+
+/* LEFT SIDE CONTENT */
+.left-panel {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 54%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* JRCC LOGO */
+.jrcc-logo {
+  width: min(66%, 590px);
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+/* RIGHT CREAM PANEL */
+.right-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 46%;
+  height: 100%;
+  background: #fffbea;
+  border-radius: 58px 0 0 58px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* LOGIN CONTENT */
+.login-card {
+  width: min(82%, 510px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* QUICKBITES LOGO */
+.quickbites-logo {
+  width: 700px !important;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  margin-bottom: 54px;
+}
+
+/* HEADINGS */
+h1,
+h2 {
+  font-family: "Righteous", cursive;
+  font-weight: 400;
+  color: #000;
+  text-align: center;
+  line-height: 1;
+  letter-spacing: -1.1px;
+}
+
+h1 {
+  font-size: clamp(40px, 3.8vw, 62px);
+  margin-bottom: 50px;
+}
+
+h2 {
+  font-size: clamp(28px, 2.35vw, 38px);
+  margin-bottom: 30px;
+}
+
+/* REGISTER */
+.register-text {
+  font-size: 16px;
+  color: #111;
+  text-align: center;
+  margin-bottom: 34px;
+}
+
+.register-text a,
+.forgot-password {
+  color: #27720e;
+  text-decoration: underline;
+}
+
+.register-text a {
+  font-weight: 500;
+}
+
+/* FORM */
+form {
+  width: 100%;
+}
+
+.form-group {
+  width: 100%;
+  margin-bottom: 28px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 18px;
+  color: #111;
+  margin-bottom: 11px;
+}
+
+/* INPUT */
+.input-box {
+  position: relative;
+  width: 100%;
+}
+
+.input-box input {
+  width: 100%;
+  height: 64px;
+  background: #fff;
+  border: 1.5px solid #111;
+  border-radius: 14px;
+  padding: 0 20px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 18px;
+  color: #333;
+  outline: none;
+}
+
+.input-box input:focus {
+  border-color: #28740f;
+  box-shadow: 0 0 0 3px rgba(40, 116, 15, 0.12);
+}
+
+.input-box input::placeholder {
+  color: #707070;
+  opacity: 1;
+}
+
+/* PASSWORD EYE */
+.eye-button {
+  position: absolute;
+  top: 50%;
+  right: 18px;
+  width: 25px;
+  height: 25px;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.eye-button svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: #111;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* FORGOT PASSWORD */
+.forgot-password {
+  display: block;
+  width: fit-content;
+  margin: -4px auto 39px;
+  font-size: 16px;
+}
+
+/* MESSAGE */
+.login-message {
+  min-height: 18px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: bold;
+  margin-top: 14px;
+}
+
+/* MEDIA QUERIES FOR RESPONSIVENESS */
+@media (max-height: 800px) and (min-width: 701px) {
+  .login-card {
+    width: min(84%, 470px);
+  }
+
+  .quickbites-logo {
+    width: min(86%, 700px) !important;
+    margin-bottom: 28px;
+  }
+
+  h1 {
+    font-size: 43px;
+    letter-spacing: -0.9px;
+    margin-bottom: 34px;
+  }
+
+  h2 {
+    font-size: 28px;
+    letter-spacing: -0.6px;
+    margin-bottom: 20px;
+  }
+
+  .register-text {
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    font-size: 16px;
+    margin-bottom: 7px;
+  }
+
+  .input-box input {
+    height: 48px;
+    font-size: 15px;
+  }
+
+  .forgot-password {
+    font-size: 14px;
+    margin-bottom: 26px;
+  }
+
+  .dig-in-button {
+    width: 300px;
+  }
+
+  .jrcc-logo {
+    width: min(66%, 470px);
+  }
+}
+
+@media (max-width: 900px) and (min-width: 701px) {
+  .left-panel {
+    width: 50%;
+  }
+
+  .right-panel {
+    width: 50%;
+    border-radius: 35px 0 0 35px;
+  }
+
+  .login-card {
+    width: 86%;
+  }
+
+  .quickbites-logo {
+    margin-bottom: 35px;
+  }
+
+  h1 {
+    font-size: 36px;
+    letter-spacing: -0.8px;
+    margin-bottom: 35px;
+  }
+
+  h2 {
+    font-size: 25px;
+    letter-spacing: -0.5px;
+    margin-bottom: 22px;
+  }
+}
+
+@media (max-width: 700px) {
+  body {
+    overflow-y: auto;
+  }
+
+  .login-page {
+    height: auto;
+    min-height: 100vh;
+    background-position: center;
+  }
+
+  .left-panel {
+    position: relative;
+    width: 100%;
+    height: 32vh;
+    min-height: 220px;
+  }
+
+  .jrcc-logo {
+    width: min(45%, 220px);
+  }
+
+  .right-panel {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 100%;
+    height: auto;
+    min-height: 68vh;
+    border-radius: 38px 38px 0 0;
+    padding: 40px 25px 50px;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .quickbites-logo {
+    width: min(78%, 300px) !important;
+    margin-bottom: 32px;
+  }
+
+  h1 {
+    font-size: 34px;
+    letter-spacing: -0.8px;
+    margin-bottom: 30px;
+  }
+
+  h2 {
+    font-size: 25px;
+    letter-spacing: -0.5px;
+    margin-bottom: 19px;
+  }
+
+  .register-text {
+    font-size: 14px;
+    margin-bottom: 25px;
+  }
+
+  .form-group label {
+    font-size: 16px;
+  }
+
+  .input-box input {
+    height: 56px;
+    font-size: 15px;
+  }
+
+  .forgot-password {
+    font-size: 14px;
+    margin-bottom: 30px;
+  }
+
+  .dig-in-button {
+    width: 90%;
+  }
+
+  /* REGISTER FORM EXTRA STYLES */
+.form-row {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.input-sublabel {
+  display: block;
+  font-size: 11px;
+  color: #555;
+  margin-top: -6px;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+@media (max-width: 700px) {
+  .form-row {
+    flex-direction: row; 
+    gap: 10px;
+  }
+}
+
+/* STYLES FOR REGISTER PAGE */
+.register-card {
+  width: min(85%, 500px) !important;
+}
+
+.register-title {
+  font-size: clamp(30px, 2.8vw, 44px) !important;
+  margin-bottom: 10px !important;
+}
+
+.form-row {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+
+.form-row .flex-1 {
+  flex: 1 !important;
+}
+
+.input-sublabel {
+  display: block;
+  font-size: 11px;
+  color: #555;
+  margin-top: -4px;
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+
+.signup-btn-custom {
+  width: 260px;
+  height: 52px;
+  margin: 16px auto 0;
+  display: block;
+  background-color: #ffc107;
+  color: #000;
+  font-family: 'Righteous', cursive, sans-serif;
+  font-size: 22px;
+  font-weight: bold;
+  border: 2px solid #000;
+  border-radius: 12px;
+  box-shadow: 0 4px 0 #000;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.signup-btn-custom:hover {
+  background-color: #ffb300;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #000;
+}
+
+.signup-btn-custom:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #000;
+}
+
+/* SIGN UP & DIG IN BUTTON ANIMATIONS */
+.signup-btn {
+  width: 240px !important;
+  padding: 12px 0 !important;
+  margin: 15px auto 0 !important;
+  display: block !important;
+  background-color: #FFC107 !important;
+  color: #000 !important;
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  border: 2px solid #000 !important;
+  border-radius: 12px !important;
+  box-shadow: 0px 4px 0px #000 !important;
+  cursor: pointer !important;
+  text-transform: uppercase !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+/* Hover Effect */
+.signup-btn:hover {
+  background-color: #FFB300 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0px 6px 0px #000 !important;
+}
+
+/* Click/Active Effect */
+.signup-btn:active {
+  transform: translateY(3px) !important;
+  box-shadow: 0px 1px 0px #000 !important;
+}
+
+.combined-logo-spinner {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.jrcc-logo-overlay {
+    width: 170px; 
+    height: 170px;
+    border-radius: 50%;
+    z-index: 2;
+}
+
+.spinner-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 15px solid #103820; 
+    box-sizing: border-box;
+    z-index: 1;
+}
+
+.spinner-active-quarter {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 15px solid transparent;
+    border-top: 15px solid #277C00; 
+    border-right: 15px solid #277C00;
+    box-sizing: border-box;
+    animation: spin 1s linear infinite;
+    z-index: 3;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+}
+
+.register-name-row {
+  display: flex;
+  gap: 12px;
+}
+
+@media (max-width: 480px) {
+  .register-name-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}

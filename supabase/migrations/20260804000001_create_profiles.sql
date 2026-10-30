@@ -1,5 +1,9 @@
--- 1. Custom User Roles Enum
-CREATE TYPE public.app_role AS ENUM ('student', 'instructor', 'admin');
+-- 1. Custom User Roles Enum (including staff for canteen queue)
+DO $$ BEGIN
+  CREATE TYPE public.app_role AS ENUM ('student', 'instructor', 'staff', 'admin');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
 -- 2. Create Profiles Table (Linked to Supabase Auth)
 CREATE TABLE IF NOT EXISTS public.profiles (
@@ -31,32 +35,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Trigger firing on every new user sign-up in auth.users
-CREATE OR REPLACE TRIGGER on_auth_user_created
+-- Safe trigger setup
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
--- 4. Row Level Security Policies (RLS)
-
--- Policy 1: Users can view their own profile
-CREATE POLICY "Users can view own profile"
-  ON public.profiles
-  FOR SELECT
-  USING (auth.uid() = id);
-
--- Policy 2: Users can update their own profile (excluding changing their role directly)
-CREATE POLICY "Users can update own profile"
-  ON public.profiles
-  FOR UPDATE
-  USING (auth.uid() = id);
-
--- Policy 3: Admins have full access to view and manage all profiles
-CREATE POLICY "Admins have full access"
-  ON public.profiles
-  FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE id = auth.uid() AND role = 'admin'
-    )
-  );

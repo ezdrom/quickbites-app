@@ -1,0 +1,19 @@
+frontend:
+  - changed-files:
+      - any-glob-to-any-file: ['src/**', 'index.html', 'vite.config.js']
+
+database:
+  - changed-files:
+      - any-glob-to-any-file: 'supabase/**'
+
+android:
+  - changed-files:
+      - any-glob-to-any-file: ['android/**', 'capacitor.config.json']
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file: ['.github/**', '.claude/**']
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file: ['**/*.test.js', '**/*.test.jsx', 'src/test/**']
